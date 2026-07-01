@@ -556,7 +556,7 @@ export function DashboardHome() {
                 Recent Activity
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
+            <CardContent className="px-2">
               <div className="space-y-1 max-h-[220px] overflow-y-auto no-scrollbar">
                 {recentActivity.length > 0 ? (
                   recentActivity.map((item) => {
@@ -597,7 +597,7 @@ export function DashboardHome() {
                 Knowledge Summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground">Notes</span>
                 <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 border-none rounded-lg font-medium px-2 py-0.5">

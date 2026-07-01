@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "check:lemma-env": "node scripts/check-lemma-env.mjs",
+    "deploy:lemma": "node scripts/deploy-lemma.mjs",
     "lint:es": "eslint",
     "lint:ts": "tsc --noEmit"
   },
