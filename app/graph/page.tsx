@@ -14,6 +14,17 @@ import {
   ArrowRightIcon,
 } from "lucide-react"
 
+type ConnectionInfo = {
+  relationship: string
+  strength?: number
+  source: "ai" | "tag"
+  tags?: string[]
+}
+
+function edgeKey(a: string, b: string) {
+  return [a, b].sort().join("::")
+}
+
 export default function GraphPage() {
   const { records: notes, isLoading: notesLoading } = useNotes()
   const { records: connections, isLoading: connectionsLoading } = useConnections()
@@ -43,31 +54,54 @@ export default function GraphPage() {
     return groups
   }, [notes])
 
-  const noteConnections = useMemo(() => {
-    const map = new Map<string, Set<string>>()
+  const connectionInfo = useMemo(() => {
+    const map = new Map<string, ConnectionInfo>()
+
     for (const conn of connections) {
       const src = conn.source_id as string
       const tgt = conn.target_id as string
+      map.set(edgeKey(src, tgt), {
+        relationship: String(conn.relationship ?? "AI-discovered connection"),
+        strength: typeof conn.strength === "number" ? conn.strength : undefined,
+        source: "ai",
+      })
+    }
+
+    // Also connect notes that share tags
+    for (const [tag, tagNotes] of tagGroups) {
+      for (let i = 0; i < tagNotes.length; i++) {
+        for (let j = i + 1; j < tagNotes.length; j++) {
+          const a = tagNotes[i].id as string
+          const b = tagNotes[j].id as string
+          const key = edgeKey(a, b)
+          const existing = map.get(key)
+
+          if (existing?.source === "ai") continue
+
+          const tags = Array.from(new Set([...(existing?.tags ?? []), tag]))
+          map.set(key, {
+            relationship: `Shared tag${tags.length === 1 ? "" : "s"}: ${tags.join(", ")}`,
+            source: "tag",
+            tags,
+          })
+        }
+      }
+    }
+
+    return map
+  }, [connections, tagGroups])
+
+  const noteConnections = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const key of connectionInfo.keys()) {
+      const [src, tgt] = key.split("::")
       if (!map.has(src)) map.set(src, new Set())
       if (!map.has(tgt)) map.set(tgt, new Set())
       map.get(src)!.add(tgt)
       map.get(tgt)!.add(src)
     }
-    // Also connect notes that share tags
-    for (const [, tagNotes] of tagGroups) {
-      for (let i = 0; i < tagNotes.length; i++) {
-        for (let j = i + 1; j < tagNotes.length; j++) {
-          const a = tagNotes[i].id as string
-          const b = tagNotes[j].id as string
-          if (!map.has(a)) map.set(a, new Set())
-          if (!map.has(b)) map.set(b, new Set())
-          map.get(a)!.add(b)
-          map.get(b)!.add(a)
-        }
-      }
-    }
     return map
-  }, [connections, tagGroups])
+  }, [connectionInfo])
 
   const selectedConnected = selectedNote
     ? noteConnections.get(selectedNote) ?? new Set<string>()
@@ -119,6 +153,7 @@ export default function GraphPage() {
                 <GraphVisualization
                   notes={notes as Record<string, unknown>[]}
                   noteConnections={noteConnections}
+                  connectionInfo={connectionInfo}
                   selectedNote={selectedNote}
                   onSelect={setSelectedNote}
                 />
@@ -163,6 +198,7 @@ export default function GraphPage() {
                     [...selectedConnected].map((id) => {
                       const n = noteMap.get(id)
                       if (!n) return null
+                      const info = connectionInfo.get(edgeKey(selectedNote, id))
                       return (
                         <Card
                           key={id}
@@ -171,9 +207,21 @@ export default function GraphPage() {
                         >
                           <CardContent className="flex items-center gap-2 py-2.5">
                             <ArrowRightIcon className="size-3 text-muted-foreground" />
-                            <span className="flex-1 truncate text-sm">
-                              {n.title as string}
-                            </span>
+                            <div className="min-w-0 flex-1">
+                              <span className="block truncate text-sm">
+                                {n.title as string}
+                              </span>
+                              {info && (
+                                <span className="block truncate text-[10px] text-muted-foreground">
+                                  {info.relationship}
+                                </span>
+                              )}
+                            </div>
+                            {info?.strength != null && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {Math.round(info.strength * 100)}%
+                              </Badge>
+                            )}
                             {(n.processed as boolean) && (
                               <SparklesIcon className="size-3 text-emerald-500" />
                             )}
@@ -227,11 +275,13 @@ export default function GraphPage() {
 function GraphVisualization({
   notes,
   noteConnections,
+  connectionInfo,
   selectedNote,
   onSelect,
 }: {
   notes: Record<string, unknown>[]
   noteConnections: Map<string, Set<string>>
+  connectionInfo: Map<string, ConnectionInfo>
   selectedNote: string | null
   onSelect: (id: string | null) => void
 }) {
@@ -311,7 +361,9 @@ function GraphVisualization({
             stroke={isHighlighted ? "var(--color-primary)" : "var(--color-border)"}
             strokeWidth={isHighlighted ? 2 : 1}
             strokeOpacity={isHighlighted ? 0.8 : 0.4}
-          />
+          >
+            <title>{connectionInfo.get(edgeKey(from, to))?.relationship ?? "Connection"}</title>
+          </line>
         )
       })}
 

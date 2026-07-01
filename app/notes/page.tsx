@@ -11,6 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PlusIcon, SearchIcon, FileTextIcon, XIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import {
+  buildNoteMetadata,
+  markProcessingFailed,
+  markProcessingStarted,
+} from "@/lib/knowledge-metadata"
 
 export default function NotesPage() {
   const { records: notes, isLoading, refresh } = useNotes()
@@ -61,7 +66,13 @@ export default function NotesPage() {
 
   async function handleCreate(data: Record<string, unknown>) {
     try {
-      await create({ ...data, processed: false })
+      await create({
+        ...data,
+        processed: false,
+        metadata: buildNoteMetadata({
+          sourceUrl: data.source_url as string | undefined,
+        }),
+      })
       toast.success("Note created")
       refresh()
     } catch {
@@ -73,7 +84,16 @@ export default function NotesPage() {
   async function handleUpdate(data: Record<string, unknown>) {
     if (!editingNote) return
     try {
-      await update(data, { recordId: editingNote.id as string })
+      await update(
+        {
+          ...data,
+          metadata: buildNoteMetadata({
+            existing: editingNote.metadata,
+            sourceUrl: data.source_url as string | undefined,
+          }),
+        },
+        { recordId: editingNote.id as string }
+      )
       toast.success("Note updated")
       refresh()
     } catch {
@@ -95,8 +115,16 @@ export default function NotesPage() {
   async function handleProcess(id: string) {
     if (processingIds.has(id)) return
 
+    const note = notes.find((item: Record<string, unknown>) => item.id === id)
     setProcessingIds((prev) => new Set(prev).add(id))
     try {
+      await update(
+        {
+          processed: false,
+          metadata: markProcessingStarted(note?.metadata),
+        },
+        { recordId: id }
+      )
       await start({ note_id: id })
       toast.success("AI processing started")
       setTimeout(() => {
@@ -113,6 +141,14 @@ export default function NotesPage() {
         next.delete(id)
         return next
       })
+      await update(
+        {
+          processed: false,
+          metadata: markProcessingFailed(note?.metadata, "Could not start AI processing."),
+        },
+        { recordId: id }
+      ).catch(() => undefined)
+      refresh()
       toast.error("Failed to process note")
     }
   }

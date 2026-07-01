@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearch } from "@/hooks/use-lemma"
+import { useChatDrawer } from "@/context/chat-drawer-context"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SearchIcon, Loader2Icon, GlobeIcon, ChevronRightIcon } from "lucide-react"
+import { SearchIcon, Loader2Icon, GlobeIcon, ChevronRightIcon, MessageCircleIcon } from "lucide-react"
 import type { GlobalSearchResult } from "lemma-sdk/react"
 
 function getResultHref(result: GlobalSearchResult, query: string) {
@@ -28,6 +29,7 @@ export default function SearchPage() {
   const [query, setQuery] = useState("")
   const [hasSearched, setHasSearched] = useState(false)
   const { search, results, isLoading, error } = useSearch()
+  const { openWithQuery } = useChatDrawer()
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -78,6 +80,27 @@ export default function SearchPage() {
 
       {results && results.length > 0 && (
         <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Use these results with Oracle</p>
+              <p className="truncate text-xs text-muted-foreground">
+                Ask for an answer grounded in the current search: {query}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                openWithQuery(
+                  `Use my notes, insights, tasks, and files to answer this search query with citations: ${query}`
+                )
+              }}
+            >
+              <MessageCircleIcon className="mr-1.5 size-3.5" />
+              Ask Oracle
+            </Button>
+          </div>
           {results.map((result, i) => (
             <Link
               key={`${result.kind}-${i}-${result.title}`}

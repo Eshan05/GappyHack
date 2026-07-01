@@ -57,8 +57,17 @@ const navItems = [
   { title: "Settings", href: "/settings", icon: SettingsIcon },
 ]
 
+function normalizePath(path: string) {
+  if (path !== "/" && path.endsWith("/")) {
+    return path.slice(0, -1)
+  }
+
+  return path
+}
+
 export function AppSidebar() {
   const pathname = usePathname()
+  const activePath = normalizePath(pathname)
   const { isMobile } = useSidebar()
   const { close: closeChat } = useChatDrawer()
   const { user } = useAuth(getLemmaClient())
@@ -123,7 +132,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = activePath === item.href
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
@@ -197,4 +206,3 @@ export function AppSidebar() {
     </Sidebar>
   )
 }
-

@@ -9,6 +9,7 @@ const lemmaEnv = {
 
 const nextConfig: NextConfig = {
   output: "export",
+  trailingSlash: true,
   env: {
     NEXT_PUBLIC_LEMMA_API_URL: lemmaEnv.apiUrl,
     NEXT_PUBLIC_LEMMA_AUTH_URL: lemmaEnv.authUrl,

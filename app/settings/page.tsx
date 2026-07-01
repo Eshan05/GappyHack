@@ -150,7 +150,7 @@ export default function SettingsPage() {
                     {displayEmail || "Authenticated with Lemma"}
                   </p>
                   <p className="truncate text-[11px] text-muted-foreground">
-                    Workspace pod: <span className="font-mono">{podId}</span>
+                    App pod: <span className="font-mono">{podId}</span>
                   </p>
                 </div>
               </div>
