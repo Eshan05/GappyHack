@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SearchIcon, Loader2Icon, GlobeIcon, ChevronRightIcon, MessageCircleIcon } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { SearchIcon, Loader2Icon, GlobeIcon, ChevronRightIcon, MessageCircleIcon, CheckSquareIcon } from "lucide-react"
 import type { GlobalSearchResult } from "lemma-sdk/react"
 
 function getResultHref(result: GlobalSearchResult, query: string) {
@@ -25,11 +26,24 @@ function getResultHref(result: GlobalSearchResult, query: string) {
   return "/search"
 }
 
+function getResultKey(result: GlobalSearchResult, index: number) {
+  const stableId = result.kind === "record" ? result.id : result.path
+  return `${result.kind}-${result.kind === "record" ? result.tableName : "file"}-${stableId || result.title || index}`
+}
+
+function getResultLabel(result: GlobalSearchResult) {
+  return result.kind === "record" ? result.sourceLabel : "Document"
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState("")
   const [hasSearched, setHasSearched] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const { search, results, isLoading, error } = useSearch()
   const { openWithQuery } = useChatDrawer()
+  const selectedResults = results.filter((result, index) =>
+    selectedKeys.has(getResultKey(result, index))
+  )
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -39,6 +53,7 @@ export default function SearchPage() {
 
     setQuery(initialQuery)
     setHasSearched(true)
+    setSelectedKeys(new Set())
     void search({ query: initialQuery })
   }, [])
 
@@ -46,7 +61,37 @@ export default function SearchPage() {
     e.preventDefault()
     if (!query.trim()) return
     setHasSearched(true)
+    setSelectedKeys(new Set())
     search({ query })
+  }
+
+  function toggleResult(result: GlobalSearchResult, index: number) {
+    const key = getResultKey(result, index)
+    setSelectedKeys((current) => {
+      const next = new Set(current)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
+
+  function askOracle() {
+    const scopedContext = selectedResults
+      .map((result, index) => {
+        const label = getResultLabel(result)
+        const subtitle = result.subtitle ? ` - ${result.subtitle}` : ""
+        return `${index + 1}. [${label}] ${result.title ?? "Untitled"}${subtitle}`
+      })
+      .join("\n")
+
+    openWithQuery(
+      selectedResults.length > 0
+        ? `Answer this search query using the selected sources below. Cite note titles or document paths when possible.\n\nQuery: ${query}\n\nSelected sources:\n${scopedContext}`
+        : `Use my notes, insights, tasks, and files to answer this search query with citations: ${query}`
+    )
   }
 
   return (
@@ -84,53 +129,76 @@ export default function SearchPage() {
             <div className="min-w-0">
               <p className="text-sm font-medium">Use these results with Oracle</p>
               <p className="truncate text-xs text-muted-foreground">
-                Ask for an answer grounded in the current search: {query}
+                {selectedResults.length > 0
+                  ? `${selectedResults.length} selected source${selectedResults.length !== 1 ? "s" : ""}`
+                  : `Ask for an answer grounded in the current search: ${query}`}
               </p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => {
-                openWithQuery(
-                  `Use my notes, insights, tasks, and files to answer this search query with citations: ${query}`
-                )
-              }}
+              onClick={askOracle}
             >
               <MessageCircleIcon className="mr-1.5 size-3.5" />
               Ask Oracle
             </Button>
           </div>
-          {results.map((result, i) => (
-            <Link
-              key={`${result.kind}-${i}-${result.title}`}
-              href={getResultHref(result, query)}
-              className="block"
-            >
-              <Card className="transition-shadow hover:shadow-md">
+          {results.map((result, i) => {
+            const resultKey = getResultKey(result, i)
+            const selected = selectedKeys.has(resultKey)
+
+            return (
+              <Card
+                key={resultKey}
+                className={`transition-shadow hover:shadow-md ${selected ? "border-emerald-500/40 bg-emerald-500/5" : ""}`}
+              >
                 <CardContent className="py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <p className="truncate text-sm font-medium">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={selected}
+                      onCheckedChange={() => toggleResult(result, i)}
+                      aria-label={`Select ${result.title ?? "result"} for Oracle`}
+                      className="mt-0.5"
+                    />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <Link
+                        href={getResultHref(result, query)}
+                        className="block truncate text-sm font-medium hover:underline"
+                      >
                         {result.title ?? "Result"}
-                      </p>
+                      </Link>
                       {result.subtitle && (
                         <p className="line-clamp-2 text-xs text-muted-foreground">
                           {result.subtitle}
                         </p>
                       )}
+                      {selected && (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-300">
+                          <CheckSquareIcon className="size-3" />
+                          Included in Oracle prompt
+                        </span>
+                      )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge variant="outline" className="text-[10px]">
-                        {result.kind === "record" ? result.sourceLabel : "Document"}
+                        {getResultLabel(result)}
                       </Badge>
-                      <ChevronRightIcon className="size-4 text-muted-foreground" />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        render={<Link href={getResultHref(result, query)} />}
+                        aria-label={`Open ${result.title ?? "result"}`}
+                        className="size-7"
+                      >
+                        <ChevronRightIcon className="size-4 text-muted-foreground" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            )
+          })}
         </div>
       )}
 

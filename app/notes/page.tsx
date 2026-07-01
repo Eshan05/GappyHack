@@ -7,14 +7,33 @@ import { NoteDetailSheet } from "@/components/notes/note-detail-sheet"
 import { CreateNoteDialog } from "@/components/notes/create-note-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PlusIcon, SearchIcon, FileTextIcon, XIcon } from "lucide-react"
+import {
+  AlertCircleIcon,
+  FileTextIcon,
+  Loader2Icon,
+  PlusIcon,
+  RotateCcwIcon,
+  SearchIcon,
+  SparklesIcon,
+  XIcon,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import {
   buildNoteMetadata,
+  getProcessingStatus,
   markProcessingFailed,
   markProcessingStarted,
+  type ProcessingStatus,
 } from "@/lib/knowledge-metadata"
 
 export default function NotesPage() {
@@ -50,6 +69,52 @@ export default function NotesPage() {
       (Array.isArray(n.tags) && (n.tags as string[]).includes(selectedTag))
     return matchesSearch && matchesTag
   })
+
+  const processingStats = notes.reduce<Record<ProcessingStatus, number>>(
+    (acc, note: Record<string, unknown>) => {
+      const status = getProcessingStatus(
+        {
+          processed: note.processed as boolean | null | undefined,
+          metadata: note.metadata,
+        },
+        processingIds.has(note.id as string)
+      )
+
+      acc[status] += 1
+      return acc
+    },
+    {
+      idle: 0,
+      queued: 0,
+      processing: 0,
+      processed: 0,
+      failed: 0,
+    }
+  )
+
+  const unprocessedNoteIds = notes
+    .filter((note: Record<string, unknown>) =>
+      getProcessingStatus(
+        {
+          processed: note.processed as boolean | null | undefined,
+          metadata: note.metadata,
+        },
+        processingIds.has(note.id as string)
+      ) === "idle"
+    )
+    .map((note: Record<string, unknown>) => note.id as string)
+
+  const failedNoteIds = notes
+    .filter((note: Record<string, unknown>) =>
+      getProcessingStatus(
+        {
+          processed: note.processed as boolean | null | undefined,
+          metadata: note.metadata,
+        },
+        processingIds.has(note.id as string)
+      ) === "failed"
+    )
+    .map((note: Record<string, unknown>) => note.id as string)
 
   useEffect(() => {
     if (typeof window === "undefined" || notes.length === 0) return
@@ -112,8 +177,8 @@ export default function NotesPage() {
     }
   }
 
-  async function handleProcess(id: string) {
-    if (processingIds.has(id)) return
+  async function handleProcess(id: string, options: { silent?: boolean } = {}) {
+    if (processingIds.has(id)) return false
 
     const note = notes.find((item: Record<string, unknown>) => item.id === id)
     setProcessingIds((prev) => new Set(prev).add(id))
@@ -126,7 +191,7 @@ export default function NotesPage() {
         { recordId: id }
       )
       await start({ note_id: id })
-      toast.success("AI processing started")
+      if (!options.silent) toast.success("AI processing started")
       setTimeout(() => {
         refresh()
         setProcessingIds((prev) => {
@@ -135,6 +200,7 @@ export default function NotesPage() {
           return next
         })
       }, 4000)
+      return true
     } catch {
       setProcessingIds((prev) => {
         const next = new Set(prev)
@@ -149,7 +215,28 @@ export default function NotesPage() {
         { recordId: id }
       ).catch(() => undefined)
       refresh()
-      toast.error("Failed to process note")
+      if (!options.silent) toast.error("Failed to process note")
+      return false
+    }
+  }
+
+  async function handleProcessBatch(ids: string[], label: string) {
+    const nextIds = ids.filter((id) => !processingIds.has(id))
+    if (nextIds.length === 0) return
+
+    const loadingToast = toast.loading(`${label} ${nextIds.length} note${nextIds.length !== 1 ? "s" : ""}...`)
+    let started = 0
+
+    for (const id of nextIds) {
+      const didStart = await handleProcess(id, { silent: true })
+      if (didStart) started += 1
+    }
+
+    toast.dismiss(loadingToast)
+    if (started > 0) {
+      toast.success(`Started AI processing for ${started} note${started !== 1 ? "s" : ""}`)
+    } else {
+      toast.error("Could not start AI processing")
     }
   }
 
@@ -162,10 +249,61 @@ export default function NotesPage() {
             {notes.length} note{notes.length !== 1 ? "s" : ""} in your second brain
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="shadow-md shadow-primary/20">
-          <PlusIcon className="mr-2 size-4" />
-          New Note
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Popover>
+            <PopoverTrigger
+              render={<Button variant="outline" size="sm" />}
+            >
+              {processingStats.failed > 0 ? (
+                <AlertCircleIcon className="mr-1.5 size-3.5 text-red-600" />
+              ) : processingStats.processing + processingStats.queued > 0 ? (
+                <Loader2Icon className="mr-1.5 size-3.5 animate-spin text-amber-600" />
+              ) : (
+                <SparklesIcon className="mr-1.5 size-3.5 text-emerald-600" />
+              )}
+              Processing
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80">
+              <PopoverHeader>
+                <PopoverTitle>Processing health</PopoverTitle>
+                <PopoverDescription>
+                  Track AI extraction across your notes.
+                </PopoverDescription>
+              </PopoverHeader>
+              <div className="grid grid-cols-2 gap-2">
+                <ProcessingStat label="Unprocessed" value={processingStats.idle} />
+                <ProcessingStat label="Processed" value={processingStats.processed} />
+                <ProcessingStat label="In flight" value={processingStats.processing + processingStats.queued} />
+                <ProcessingStat label="Failed" value={processingStats.failed} tone="red" />
+              </div>
+              <div className="mt-2 grid gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={unprocessedNoteIds.length === 0}
+                  onClick={() => void handleProcessBatch(unprocessedNoteIds, "Processing")}
+                >
+                  <SparklesIcon className="mr-1.5 size-3.5" />
+                  Process unprocessed
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={failedNoteIds.length === 0}
+                  onClick={() => void handleProcessBatch(failedNoteIds, "Retrying")}
+                >
+                  <RotateCcwIcon className="mr-1.5 size-3.5" />
+                  Retry failed
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <Button onClick={() => setDialogOpen(true)} className="shadow-md shadow-primary/20">
+            <PlusIcon className="mr-2 size-4" />
+            New Note
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -284,6 +422,25 @@ export default function NotesPage() {
           initial={editingNote as never}
         />
       )}
+    </div>
+  )
+}
+
+function ProcessingStat({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string
+  value: number
+  tone?: "default" | "red"
+}) {
+  return (
+    <div className="rounded-lg border bg-background p-2">
+      <p className={`text-lg font-semibold ${tone === "red" && value > 0 ? "text-red-600" : ""}`}>
+        {value}
+      </p>
+      <p className="text-[10px] text-muted-foreground">{label}</p>
     </div>
   )
 }
