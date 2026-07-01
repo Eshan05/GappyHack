@@ -19,7 +19,7 @@ import { getLemmaClient } from "@/lib/lemma"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuLinkItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -116,15 +116,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <SidebarMenuButton
-                    tooltip={displayName}
-                    size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:size-8!"
-                  />
-                }
-              >
+              <DropdownMenuTrigger className="group/menu-button flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! [&_svg]:size-4 [&_svg]:shrink-0">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg border border-emerald-500/15 bg-emerald-500/10 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                   {initial}
                 </div>
@@ -152,10 +144,10 @@ export function AppSidebar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem render={<Link href="/settings" />}>
+                <DropdownMenuLinkItem href="/settings">
                   <SettingsIcon />
                   <span>Settings</span>
-                </DropdownMenuItem>
+                </DropdownMenuLinkItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import {
@@ -42,7 +48,7 @@ export function FloatingChat() {
   // Scroll to bottom when messages change
   useEffect(() => {
     if (scrollRef.current) {
-      const scrollContainer = scrollRef.current.querySelector("[data-radix-scroll-area-viewport]")
+      const scrollContainer = scrollRef.current.querySelector("[data-slot='scroll-area-viewport']")
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight
       }
@@ -174,35 +180,20 @@ export function FloatingChat() {
         </AnimatePresence>
       </motion.button>
 
-      {/* Sliding Chat Panel */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 z-45 bg-black/10 dark:bg-black/30 backdrop-blur-xs"
-            />
-
-            {/* Drawer */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed top-0 right-0 bottom-0 z-45 w-full sm:w-[480px] bg-white dark:bg-zinc-950 border-l border-gray-100 dark:border-zinc-900 shadow-2xl flex flex-col"
-            >
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          className="min-h-0 gap-0 overflow-hidden border-gray-100 bg-white p-0 shadow-2xl data-[side=right]:w-full! data-[side=right]:sm:w-[480px]! data-[side=right]:sm:max-w-none! dark:border-zinc-900 dark:bg-zinc-950"
+        >
               {/* Header */}
-              <div className="p-4 border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-900/20">
+              <SheetHeader className="shrink-0 flex-row items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/20">
                 <div className="flex items-center gap-2.5">
                   <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/10">
                     <BrainIcon className="size-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-foreground">Oracle Assistant</h3>
+                    <SheetTitle className="text-sm font-bold text-foreground">Oracle Assistant</SheetTitle>
                     <p className="text-[10px] text-muted-foreground font-medium">Context-aware Second Brain AI</p>
                   </div>
                 </div>
@@ -214,10 +205,10 @@ export function FloatingChat() {
                 >
                   <XIcon className="size-4" />
                 </Button>
-              </div>
+              </SheetHeader>
 
               {/* Chat Conversation Area */}
-              <ScrollArea ref={scrollRef} className="flex-1 p-4">
+              <ScrollArea ref={scrollRef} className="min-h-0 flex-1 p-4">
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center gap-5 text-center py-16 px-4">
                     <div className="relative">
@@ -324,7 +315,7 @@ export function FloatingChat() {
               </ScrollArea>
 
               {/* Chat Input Footer */}
-              <div className="p-4 border-t border-gray-100 dark:border-zinc-900 space-y-3 bg-white dark:bg-zinc-950">
+              <div className="shrink-0 p-4 border-t border-gray-100 dark:border-zinc-900 space-y-3 bg-white dark:bg-zinc-950">
                 
                 {/* Suggested follow-ups */}
                 {messages.length > 0 && !isLoading && (
@@ -399,11 +390,8 @@ export function FloatingChat() {
                   </Button>
                 </div>
               </div>
-
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }

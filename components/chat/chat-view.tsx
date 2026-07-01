@@ -34,7 +34,10 @@ export function ChatView() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+      const scrollContainer = scrollRef.current.querySelector("[data-slot='scroll-area-viewport']")
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
     }
   }, [messages])
 
@@ -64,8 +67,8 @@ export function ChatView() {
   }
 
   return (
-    <div className="flex h-[calc(100svh-9rem)] flex-col">
-      <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
+    <div className="flex h-[calc(100svh-9rem)] min-h-0 flex-col">
+      <ScrollArea className="min-h-0 flex-1 pr-4" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-6 py-16 text-center">
             <div className="relative">
