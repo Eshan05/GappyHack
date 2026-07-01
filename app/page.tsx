@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { motion } from "framer-motion"
 import { useNotes, useInsights, useTasks, useCreateNote, useProcessNote } from "@/hooks/use-lemma"
 import { useChatDrawer } from "@/context/chat-drawer-context"
@@ -20,15 +20,27 @@ import {
   UploadIcon,
   LightbulbIcon,
   NetworkIcon,
-  MessageSquareIcon,
   ChevronRightIcon,
   CheckSquareIcon,
-  BookOpenIcon,
-  CompassIcon,
-  PlusIcon,
   ArrowRightIcon,
   HistoryIcon,
+  type LucideIcon,
 } from "lucide-react"
+
+type DashboardRecord = Record<string, unknown>
+type DashboardItem = {
+  id: string
+  title: string
+  meta: string
+  query: string
+  icon: LucideIcon
+  timestamp: number
+}
+
+type QuickPrompt = {
+  text: string
+  icon: LucideIcon
+}
 
 // Framer Motion Animation Variants
 const containerVariants = {
@@ -55,23 +67,52 @@ const itemVariants = {
   },
 }
 
-const recentConversations = [
-  { topic: "RAG Architecture", time: "2h ago" },
-  { topic: "Summarize Research Paper", time: "1d ago" },
-  { topic: "What are Vector Databases?", time: "3d ago" },
-  { topic: "ML vs Deep Learning", time: "1w ago" },
-]
+function getText(record: DashboardRecord, key: string) {
+  const value = record[key]
+  return typeof value === "string" && value.trim() ? value.trim() : undefined
+}
 
-const quickPrompts = [
-  { text: "Summarize my notes", icon: FileTextIcon },
-  { text: "Find related notes", icon: NetworkIcon },
-  { text: "Generate insights", icon: SparklesIcon },
-  { text: "Convert to tasks", icon: ListTodoIcon },
-  { text: "Create flashcards", icon: BrainIcon },
-  { text: "Explain this topic", icon: LightbulbIcon },
-  { text: "Write documentation", icon: BookOpenIcon },
-  { text: "Research mode", icon: CompassIcon },
-]
+function getTitle(record: DashboardRecord, fallback: string) {
+  return getText(record, "title") ?? truncate(getText(record, "content") ?? fallback, 80)
+}
+
+function getTimestamp(record: DashboardRecord) {
+  const value = getText(record, "created_at") ?? getText(record, "updated_at")
+  if (!value) return 0
+
+  const timestamp = new Date(value).getTime()
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+function getDateLabel(record: DashboardRecord) {
+  const timestamp = getTimestamp(record)
+  if (!timestamp) return "Recent"
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(timestamp))
+}
+
+function getTags(record: DashboardRecord) {
+  return Array.isArray(record.tags)
+    ? record.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+    : []
+}
+
+function truncate(value: string, maxLength: number) {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 3).trim()}...` : value
+}
+
+function uniquePrompts(prompts: QuickPrompt[]) {
+  const seen = new Set<string>()
+  return prompts.filter((prompt) => {
+    const key = prompt.text.toLowerCase()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
 
 export default function DashboardPage() {
   const { records: notes, refresh: refreshNotes } = useNotes()
@@ -84,9 +125,6 @@ export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
-
-  // Document count - stored locally or fallback to default
-  const [docCount, setDocCount] = useState(3)
 
   // Ctrl + K Focus Shortcut
   useEffect(() => {
@@ -138,7 +176,114 @@ export default function DashboardPage() {
   }
 
   // Get dynamic counts
-  const pendingTasksCount = tasks.filter((t: Record<string, unknown>) => t.status !== "done").length
+  const pendingTasksCount = tasks.filter((t: DashboardRecord) => t.status !== "done").length
+  const processedNotesCount = notes.filter((note: DashboardRecord) => note.processed === true).length
+
+  const latestNote = notes[0] as DashboardRecord | undefined
+  const latestInsight = insights[0] as DashboardRecord | undefined
+  const latestPendingTask = tasks.find((task: DashboardRecord) => task.status !== "done") as DashboardRecord | undefined
+
+  const quickPrompts = useMemo(() => {
+    const prompts: QuickPrompt[] = []
+
+    if (latestNote) {
+      const title = getTitle(latestNote, "latest note")
+      const tags = getTags(latestNote)
+      prompts.push({ text: `Summarize "${title}"`, icon: FileTextIcon })
+      prompts.push({
+        text: tags[0] ? `Find notes related to ${tags[0]}` : `Find notes related to "${title}"`,
+        icon: NetworkIcon,
+      })
+    }
+
+    if (latestInsight) {
+      const content = getText(latestInsight, "content")
+      if (content) {
+        prompts.push({
+          text: `Explain this insight: ${truncate(content, 72)}`,
+          icon: SparklesIcon,
+        })
+      }
+    }
+
+    if (latestPendingTask) {
+      prompts.push({
+        text: `Help me finish "${getTitle(latestPendingTask, "my next task")}"`,
+        icon: ListTodoIcon,
+      })
+    }
+
+    if (processedNotesCount > 1) {
+      prompts.push({ text: "Compare my processed notes", icon: BrainIcon })
+    }
+
+    if (pendingTasksCount > 1) {
+      prompts.push({ text: "Prioritize my open tasks", icon: CheckSquareIcon })
+    }
+
+    return uniquePrompts(prompts).slice(0, 6)
+  }, [latestInsight, latestNote, latestPendingTask, pendingTasksCount, processedNotesCount])
+
+  const recentActivity = useMemo(() => {
+    const activity: DashboardItem[] = [
+      ...notes.slice(0, 4).map((note: DashboardRecord, index: number) => {
+        const title = getTitle(note, "Untitled note")
+        return {
+          id: `note-${String(note.id ?? index)}`,
+          title,
+          meta: `Note - ${getDateLabel(note)}`,
+          query: `Summarize "${title}"`,
+          icon: FileTextIcon,
+          timestamp: getTimestamp(note),
+        }
+      }),
+      ...insights.slice(0, 3).map((insight: DashboardRecord, index: number) => {
+        const title = truncate(getText(insight, "content") ?? "Insight", 80)
+        return {
+          id: `insight-${String(insight.id ?? index)}`,
+          title,
+          meta: `Insight - ${getDateLabel(insight)}`,
+          query: `Explain this insight: ${title}`,
+          icon: LightbulbIcon,
+          timestamp: getTimestamp(insight),
+        }
+      }),
+      ...tasks.slice(0, 3).map((task: DashboardRecord, index: number) => {
+        const title = getTitle(task, "Task")
+        return {
+          id: `task-${String(task.id ?? index)}`,
+          title,
+          meta: `Task - ${getDateLabel(task)}`,
+          query: `Help me with "${title}"`,
+          icon: ListTodoIcon,
+          timestamp: getTimestamp(task),
+        }
+      }),
+    ]
+
+    return activity
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5)
+  }, [insights, notes, tasks])
+
+  const memoryRecall = useMemo(() => {
+    const datedNotes = notes
+      .filter((note: DashboardRecord) => getTimestamp(note) > 0)
+      .sort((a: DashboardRecord, b: DashboardRecord) => getTimestamp(a) - getTimestamp(b))
+
+    const note = datedNotes.find((item: DashboardRecord) => getText(item, "summary") || getText(item, "content"))
+    if (!note || notes.length < 2) return null
+
+    const title = getTitle(note, "older note")
+    const detail = truncate(getText(note, "summary") ?? getText(note, "content") ?? title, 130)
+
+    return {
+      title,
+      detail,
+      date: getDateLabel(note),
+      query: `Recall what I wrote about "${title}"`,
+    }
+  }, [notes])
 
   return (
     <div className="relative min-h-screen">
@@ -207,25 +352,26 @@ export default function DashboardPage() {
             </form>
           </motion.div>
 
-          {/* Quick Prompt Pills */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="max-w-3xl mx-auto flex flex-wrap justify-center gap-2"
-          >
-            {quickPrompts.map((prompt) => (
-              <motion.button
-                key={prompt.text}
-                variants={itemVariants}
-                onClick={() => openWithQuery(prompt.text)}
-                className="flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white hover:bg-gray-50 text-xs font-medium text-gray-700 px-3.5 py-1.5 shadow-sm transition-all duration-200 hover:border-emerald-500/30 hover:text-emerald-600 dark:border-zinc-800/80 dark:bg-zinc-950 dark:hover:bg-zinc-900 dark:text-zinc-300 dark:hover:text-emerald-400"
-              >
-                <prompt.icon className="size-3.5 text-muted-foreground/80 group-hover:text-emerald-500" />
-                <span>{prompt.text}</span>
-              </motion.button>
-            ))}
-          </motion.div>
+          {quickPrompts.length > 0 && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="max-w-3xl mx-auto flex flex-wrap justify-center gap-2"
+            >
+              {quickPrompts.map((prompt) => (
+                <motion.button
+                  key={prompt.text}
+                  variants={itemVariants}
+                  onClick={() => openWithQuery(prompt.text)}
+                  className="group flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white hover:bg-gray-50 text-xs font-medium text-gray-700 px-3.5 py-1.5 shadow-sm transition-all duration-200 hover:border-emerald-500/30 hover:text-emerald-600 dark:border-zinc-800/80 dark:bg-zinc-950 dark:hover:bg-zinc-900 dark:text-zinc-300 dark:hover:text-emerald-400"
+                >
+                  <prompt.icon className="size-3.5 text-muted-foreground/80 group-hover:text-emerald-500" />
+                  <span>{prompt.text}</span>
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
 
           {/* Try These Actions Cards */}
           <div className="space-y-4">
@@ -321,60 +467,70 @@ export default function DashboardPage() {
         {/* Right Sidebar Column (Desktop Only / Collapses on mobile/tablet) */}
         <div className="space-y-6 lg:border-l lg:border-gray-100 lg:pl-6 dark:lg:border-zinc-800/50">
           
-          {/* Recent Conversations */}
+          {/* Recent Activity */}
           <Card className="rounded-2xl border border-gray-200/80 dark:border-zinc-800/80 shadow-sm bg-white dark:bg-zinc-950 overflow-hidden">
             <CardHeader className="py-4 px-4 flex flex-row items-center gap-2 border-b border-gray-50 dark:border-zinc-900">
               <HistoryIcon className="size-4 text-muted-foreground" />
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Recent Conversations
+                Recent Activity
               </CardTitle>
             </CardHeader>
             <CardContent className="p-2">
               <div className="space-y-1 max-h-[220px] overflow-y-auto no-scrollbar">
-                {recentConversations.map((chat, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => openWithQuery(`Tell me about ${chat.topic}`)}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-gray-50 dark:hover:bg-zinc-900 group transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <MessageSquareIcon className="size-4 text-muted-foreground/80 shrink-0 group-hover:text-emerald-500 transition-colors" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                          {chat.topic}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground/70">{chat.time}</p>
+                {recentActivity.length > 0 ? (
+                  recentActivity.map((item) => {
+                    const Icon = item.icon
+
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => openWithQuery(item.query)}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl text-left hover:bg-gray-50 dark:hover:bg-zinc-900 group transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Icon className="size-4 text-muted-foreground/80 shrink-0 group-hover:text-emerald-500 transition-colors" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                              {item.title}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground/70">{item.meta}</p>
+                          </div>
+                        </div>
+                        <ChevronRightIcon className="size-3.5 text-muted-foreground/30 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" />
+                      </button>
+                    )
+                  })
+                ) : (
+                  <div className="p-3 text-xs text-muted-foreground">
+                    No activity yet.
+                  </div>
+                )}
                       </div>
-                    </div>
-                    <ChevronRightIcon className="size-3.5 text-muted-foreground/30 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" />
-                  </button>
-                ))}
-              </div>
             </CardContent>
           </Card>
 
-          {/* Today's Summary */}
+          {/* Knowledge Summary */}
           <Card className="rounded-2xl border border-gray-200/80 dark:border-zinc-800/80 shadow-sm bg-white dark:bg-zinc-950">
             <CardHeader className="py-4 px-4 border-b border-gray-50 dark:border-zinc-900">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Today's Summary
+                Knowledge Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Notes Created</span>
+                <span className="text-muted-foreground">Notes</span>
                 <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 border-none rounded-lg font-medium px-2 py-0.5">
                   {notes.length}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Documents Uploaded</span>
+                <span className="text-muted-foreground">Processed Notes</span>
                 <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 border-none rounded-lg font-medium px-2 py-0.5">
-                  {docCount}
+                  {processedNotesCount}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Insights Generated</span>
+                <span className="text-muted-foreground">Insights</span>
                 <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 border-none rounded-lg font-medium px-2 py-0.5">
                   {insights.length}
                 </Badge>
@@ -388,26 +544,27 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Memory Recall */}
-          <Card className="rounded-2xl border border-emerald-500/20 dark:border-emerald-500/30 bg-emerald-500/[0.02] dark:bg-emerald-500/[0.01] shadow-sm overflow-hidden">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                <SparklesIcon className="size-3.5" />
-                <span>Memory Recall</span>
-              </div>
-              <p className="text-xs text-foreground/80 leading-relaxed">
-                You worked on <span className="font-semibold text-emerald-700 dark:text-emerald-400">Crime Analytics</span> two months ago. Suggested because today's queries show a similar pattern.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openWithQuery("Show me the Crime Analytics notes from two months ago")}
-                className="w-full text-xs border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-700 text-emerald-600 dark:text-emerald-400 dark:border-emerald-500/10 dark:hover:bg-emerald-500/20 font-medium rounded-xl h-8 transition-colors"
-              >
-                Open Memory
-              </Button>
-            </CardContent>
-          </Card>
+          {memoryRecall && (
+            <Card className="rounded-2xl border border-emerald-500/20 dark:border-emerald-500/30 bg-emerald-500/[0.02] dark:bg-emerald-500/[0.01] shadow-sm overflow-hidden">
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  <SparklesIcon className="size-3.5" />
+                  <span>Memory Recall</span>
+                </div>
+                <p className="text-xs text-foreground/80 leading-relaxed">
+                  Revisit <span className="font-semibold text-emerald-700 dark:text-emerald-400">{memoryRecall.title}</span> from {memoryRecall.date}. {memoryRecall.detail}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openWithQuery(memoryRecall.query)}
+                  className="w-full text-xs border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-700 text-emerald-600 dark:text-emerald-400 dark:border-emerald-500/10 dark:hover:bg-emerald-500/20 font-medium rounded-xl h-8 transition-colors"
+                >
+                  Open Memory
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
         </div>
 

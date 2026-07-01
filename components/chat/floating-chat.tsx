@@ -17,7 +17,6 @@ import {
   XIcon,
   MicIcon,
   PaperclipIcon,
-  UserIcon,
   Loader2Icon,
   ArrowRightIcon,
 } from "lucide-react"
@@ -37,7 +36,6 @@ export function FloatingChat() {
   const { upload, isSubmitting: isUploading } = useUploadDocument()
   
   const [input, setInput] = useState("")
-  const [isListening, setIsListening] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -100,22 +98,8 @@ export function FloatingChat() {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  // Voice Input Simulation
   function toggleVoiceInput() {
-    if (isListening) {
-      setIsListening(false)
-    } else {
-      setIsListening(true)
-      toast.info("Listening... (Speak now)", { id: "voice-toast" })
-      
-      // Simulate speech-to-text after 3 seconds
-      setTimeout(() => {
-        setIsListening(false)
-        toast.dismiss("voice-toast")
-        setInput("Summarize my second brain insights.")
-        toast.success("Voice transcribed!")
-      }, 3000)
-    }
+    toast.info("Voice input is not connected yet.")
   }
 
   function getMessageText(msg: AssistantRenderableMessage): string {
@@ -388,11 +372,7 @@ export function FloatingChat() {
                     variant="ghost"
                     size="icon"
                     onClick={toggleVoiceInput}
-                    className={`size-8 rounded-xl shrink-0 ${
-                      isListening 
-                        ? "text-red-500 bg-red-500/10 animate-pulse" 
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    className="size-8 rounded-xl shrink-0 text-muted-foreground hover:text-foreground"
                   >
                     <MicIcon className="size-4" />
                   </Button>

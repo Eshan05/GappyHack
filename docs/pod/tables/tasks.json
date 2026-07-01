@@ -7,8 +7,8 @@
     { "name": "title", "type": "TEXT", "required": true },
     { "name": "description", "type": "TEXT" },
     { "name": "note_id", "type": "UUID" },
-    { "name": "priority", "type": "ENUM", "default": "medium", "options": ["low", "medium", "high"] },
-    { "name": "status", "type": "ENUM", "default": "pending", "options": ["pending", "in_progress", "done"] },
+    { "name": "priority", "type": "ENUM", "default": "medium", "options": ["low", "medium", "high", "urgent"] },
+    { "name": "status", "type": "ENUM", "default": "pending", "options": ["pending", "in_progress", "done", "cancelled"] },
     { "name": "due_date", "type": "DATE" },
     { "name": "metadata", "type": "JSON" }
   ]

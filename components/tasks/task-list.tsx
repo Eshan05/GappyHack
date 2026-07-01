@@ -122,9 +122,9 @@ export function TaskList() {
                   <div className="flex items-center gap-2">
                     <Badge
                       variant="secondary"
-                      className={`text-[10px] ${priorityColors[String(task.priority ?? "low")]}`}
+                      className={`text-[10px] ${priorityColors[String(task.priority ?? "medium")] ?? priorityColors.medium}`}
                     >
-                      {String(task.priority ?? "low")}
+                      {String(task.priority ?? "medium")}
                     </Badge>
                     {task.due_date ? (
                       <span className="text-[10px] text-muted-foreground">

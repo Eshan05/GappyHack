@@ -6,7 +6,7 @@
   "columns": [
     { "name": "title", "type": "TEXT", "required": true },
     { "name": "content", "type": "TEXT", "required": true },
-    { "name": "type", "type": "ENUM", "required": true, "default": "note", "options": ["note", "article", "bookmark"] },
+    { "name": "type", "type": "ENUM", "required": true, "default": "note", "options": ["note", "article", "bookmark", "link", "idea", "snippet"] },
     { "name": "source_url", "type": "TEXT" },
     { "name": "tags", "type": "JSON" },
     { "name": "summary", "type": "TEXT" },

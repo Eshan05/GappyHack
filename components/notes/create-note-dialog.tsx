@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const noteTypes = ["note", "link", "idea", "snippet", "bookmark"] as const
+const noteTypes = ["note", "article", "bookmark", "link", "idea", "snippet"] as const
 
 interface CreateNoteDialogProps {
   open: boolean
@@ -122,7 +122,7 @@ export function CreateNoteDialog({
               required
             />
           </div>
-          {(type === "link" || type === "bookmark") && (
+          {(type === "article" || type === "bookmark" || type === "link") && (
             <div className="space-y-2">
               <Label htmlFor="source_url">URL</Label>
               <Input
