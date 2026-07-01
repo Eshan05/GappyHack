@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUploadDocument } from "@/hooks/use-lemma"
+import { useBrowserPathname } from "@/hooks/use-browser-pathname"
 import { useOracleChat } from "@/context/oracle-chat-context"
 import { useChatDrawer } from "@/context/chat-drawer-context"
 import { Button } from "@/components/ui/button"
@@ -42,7 +42,7 @@ const defaultSuggestions = [
 
 export function FloatingChat() {
   const { isOpen, setIsOpen, initialQuery, clearInitialQuery } = useChatDrawer()
-  const pathname = usePathname()
+  const pathname = useBrowserPathname()
   const {
     messages,
     conversations,

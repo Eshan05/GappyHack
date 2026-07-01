@@ -57,14 +57,14 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  show: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
-      type: "spring" as const, 
-      stiffness: 100, 
-      damping: 15 
-    } 
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15
+    }
   },
 }
 
@@ -115,7 +115,79 @@ function uniquePrompts(prompts: QuickPrompt[]) {
   })
 }
 
-export default function DashboardPage() {
+export default function RootPage() {
+  return <LandingPage />
+}
+
+function LandingPage() {
+  const productAreas = [
+    { title: "Capture", description: "Save notes, URLs, snippets, and documents.", icon: FileTextIcon },
+    { title: "Understand", description: "Extract summaries, insights, tasks, and links.", icon: SparklesIcon },
+    { title: "Recall", description: "Search and ask Oracle with source-backed answers.", icon: SearchIcon },
+  ]
+
+  return (
+    <div className="mx-auto flex min-h-[calc(100svh-8rem)] max-w-6xl flex-col justify-center gap-8">
+      <section className="grid items-center gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="space-y-5">
+          <div className="inline-flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
+            <BrainIcon className="size-3.5 text-emerald-600" />
+            AI knowledge workspace
+          </div>
+          <div className="space-y-3">
+            <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">
+              A private second brain for notes, documents, tasks, and recall.
+            </h1>
+            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
+              Capture knowledge once, let the system process it, then search, chat, and reconnect it when you need it.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button render={<Link href="/dashboard" />} className="h-10 rounded-lg">
+              Open Dashboard
+              <ArrowRightIcon className="ml-1.5 size-4" />
+            </Button>
+            <Button render={<Link href="/notes" />} variant="outline" className="h-10 rounded-lg">
+              Add Knowledge
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between border-b pb-3">
+            <div>
+              <p className="text-sm font-semibold">Second Brain loop</p>
+              <p className="text-xs text-muted-foreground">Capture, process, retrieve, act</p>
+            </div>
+            <Badge variant="outline" className="text-[10px]">
+              App pod
+            </Badge>
+          </div>
+          <div className="space-y-3">
+            {productAreas.map((area, index) => (
+              <div key={area.title} className="flex items-start gap-3 rounded-lg border bg-background p-3">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                  <area.icon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold text-muted-foreground">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <p className="text-sm font-medium">{area.title}</p>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{area.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+export function DashboardHome() {
   const router = useRouter()
   const { records: notes, refresh: refreshNotes } = useNotes()
   const { records: insights } = useInsights()
@@ -298,12 +370,12 @@ export default function DashboardPage() {
     <div className="relative min-h-screen">
       {/* Redesigned Three-Column Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-        
+
         {/* Main content (Left & Center Columns on Desktop, spanning 3 cols) */}
         <div className="lg:col-span-3 space-y-10">
-          
+
           {/* Centered Hero Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -329,10 +401,10 @@ export default function DashboardPage() {
           >
             <form onSubmit={handleSearchSubmit} className="relative group">
               <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 opacity-0 group-focus-within:opacity-100 blur-md transition-all duration-300 pointer-events-none" />
-              
+
               <div className="relative flex items-center bg-white/60 dark:bg-zinc-950/60 backdrop-blur-xl border border-gray-200 dark:border-zinc-800 rounded-full py-2.5 pl-5 pr-3 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-zinc-700 transition-all duration-300 group-focus-within:border-emerald-500 group-focus-within:ring-2 group-focus-within:ring-emerald-500/10">
                 <SearchIcon className="size-5 text-muted-foreground mr-3 shrink-0" />
-                
+
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -341,17 +413,17 @@ export default function DashboardPage() {
                   placeholder="Ask anything about your notes, documents or ideas..."
                   className="flex-1 bg-transparent text-sm text-foreground focus:outline-none placeholder:text-muted-foreground/70"
                 />
-                
+
                 <div className="flex items-center gap-2">
                   {/* Ctrl + K Badge */}
                   <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-0.5 rounded border border-gray-200 dark:border-zinc-800 bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground/80">
                     <span className="text-xs">Ctrl</span>K
                   </kbd>
-                  
+
                   {/* Send Button */}
-                  <Button 
-                    type="submit" 
-                    size="icon" 
+                  <Button
+                    type="submit"
+                    size="icon"
                     className="size-9 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/10 shrink-0 transition-transform active:scale-95"
                   >
                     <SendIcon className="size-3.5" />
@@ -388,7 +460,7 @@ export default function DashboardPage() {
               Quick Actions
             </h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              
+
               {/* Card 1: Upload Document */}
               <Link href="/documents" className="h-full">
                 <motion.div
@@ -475,10 +547,10 @@ export default function DashboardPage() {
 
         {/* Right Sidebar Column (Desktop Only / Collapses on mobile/tablet) */}
         <div className="space-y-6 lg:border-l lg:border-gray-100 lg:pl-6 dark:lg:border-zinc-800/50">
-          
+
           {/* Recent Activity */}
           <Card className="rounded-2xl border border-gray-200/80 dark:border-zinc-800/80 shadow-sm bg-white dark:bg-zinc-950 overflow-hidden">
-            <CardHeader className="py-4 px-4 flex flex-row items-center gap-2 border-b border-gray-50 dark:border-zinc-900">
+            <CardHeader className="flex flex-row items-center gap-2 border-b border-gray-50 dark:border-zinc-900">
               <HistoryIcon className="size-4 text-muted-foreground" />
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Recent Activity
@@ -514,13 +586,13 @@ export default function DashboardPage() {
                     No activity yet.
                   </div>
                 )}
-                      </div>
+              </div>
             </CardContent>
           </Card>
 
           {/* Knowledge Summary */}
           <Card className="rounded-2xl border border-gray-200/80 dark:border-zinc-800/80 shadow-sm bg-white dark:bg-zinc-950">
-            <CardHeader className="py-4 px-4 border-b border-gray-50 dark:border-zinc-900">
+            <CardHeader className="border-b border-gray-50 dark:border-zinc-900">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Knowledge Summary
               </CardTitle>
@@ -555,7 +627,7 @@ export default function DashboardPage() {
 
           {memoryRecall && (
             <Card className="rounded-2xl border border-emerald-500/20 dark:border-emerald-500/30 bg-emerald-500/[0.02] dark:bg-emerald-500/[0.01] shadow-sm overflow-hidden">
-              <CardContent className="p-4 space-y-3">
+              <CardContent className="">
                 <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                   <SparklesIcon className="size-3.5" />
                   <span>Memory Recall</span>

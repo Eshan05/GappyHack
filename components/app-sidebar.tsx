@@ -14,11 +14,11 @@ import {
   LogOutIcon,
 } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { useAuth } from "lemma-sdk/react"
 import { getLemmaClient } from "@/lib/lemma"
 import { useChatDrawer } from "@/context/chat-drawer-context"
+import { useBrowserPathname } from "@/hooks/use-browser-pathname"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/sidebar"
 
 const navItems = [
-  { title: "Dashboard", href: "/", icon: BrainIcon },
+  { title: "Dashboard", href: "/dashboard", icon: BrainIcon },
   { title: "Notes", href: "/notes", icon: FileTextIcon },
   { title: "Documents", href: "/documents", icon: UploadIcon },
   { title: "AI Chat", href: "/chat", icon: MessageCircleIcon },
@@ -57,17 +57,8 @@ const navItems = [
   { title: "Settings", href: "/settings", icon: SettingsIcon },
 ]
 
-function normalizePath(path: string) {
-  if (path !== "/" && path.endsWith("/")) {
-    return path.slice(0, -1)
-  }
-
-  return path
-}
-
 export function AppSidebar() {
-  const pathname = usePathname()
-  const activePath = normalizePath(pathname)
+  const activePath = useBrowserPathname()
   const { isMobile } = useSidebar()
   const { close: closeChat } = useChatDrawer()
   const { user } = useAuth(getLemmaClient())
@@ -110,7 +101,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              render={<Link href="/" />}
+              render={<Link href="/dashboard" />}
               tooltip="Second Brain"
               size="lg"
               className="group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:size-8!"
