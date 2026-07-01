@@ -11,15 +11,18 @@ import {
   SearchIcon,
   NetworkIcon,
   SettingsIcon,
+  LogOutIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { useAuth } from "lemma-sdk/react"
 import { getLemmaClient } from "@/lib/lemma"
 import { useChatDrawer } from "@/context/chat-drawer-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLinkItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -59,9 +62,35 @@ export function AppSidebar() {
   const { isMobile } = useSidebar()
   const { close: closeChat } = useChatDrawer()
   const { user } = useAuth(getLemmaClient())
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const displayName = user?.name || user?.email?.split("@")[0] || "User"
   const displayEmail = user?.email || ""
   const initial = displayName[0]?.toUpperCase() || "U"
+
+  async function handleSignOut() {
+    if (isSigningOut) return
+    closeChat()
+    setIsSigningOut(true)
+    let shouldNavigateHome = true
+
+    try {
+      const signedOut = await getLemmaClient().auth.signOut()
+
+      if (!signedOut) {
+        shouldNavigateHome = false
+        await getLemmaClient().auth.redirectToFederatedLogout({
+          redirectUri: window.location.origin,
+        })
+        return
+      }
+    } catch {
+      shouldNavigateHome = true
+    } finally {
+      if (shouldNavigateHome) {
+        window.location.assign("/")
+      }
+    }
+  }
 
   return (
     <Sidebar
@@ -145,11 +174,20 @@ export function AppSidebar() {
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                {/* <DropdownMenuSeparator />
                 <DropdownMenuLinkItem href="/settings" onClick={closeChat}>
                   <SettingsIcon />
                   <span>Settings</span>
-                </DropdownMenuLinkItem>
+                </DropdownMenuLinkItem> */}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  variant="destructive"
+                >
+                  <LogOutIcon />
+                  <span>{isSigningOut ? "Signing out..." : "Sign out"}</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

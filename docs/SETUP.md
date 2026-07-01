@@ -96,9 +96,15 @@ NEXT_PUBLIC_LEMMA_API_URL=/lemma-api
 NEXT_PUBLIC_LEMMA_AUTH_URL=https://lemma.work/auth
 NEXT_PUBLIC_LEMMA_POD_ID=<your-pod-id>
 NEXT_PUBLIC_LEMMA_ORG_ID=<your-org-id>
+VITE_LEMMA_API_URL=/lemma-api
+VITE_LEMMA_AUTH_URL=https://lemma.work/auth
+VITE_LEMMA_POD_ID=<your-pod-id>
+VITE_LEMMA_ORG_ID=<your-org-id>
 ```
 
-For production (Vercel), set `NEXT_PUBLIC_LEMMA_API_URL` to the real Lemma API URL (e.g. `https://api.lemma.work`).
+For production, set the API URL to the real Lemma API URL (e.g. `https://api.lemma.work`).
+
+`NEXT_PUBLIC_LEMMA_POD_ID` and `VITE_LEMMA_POD_ID` should point at the same shared pod. The Next app accepts either prefix at build time, but keeping both in sync avoids CLI/deploy confusion. The pod is intentionally not derived from the signed-in user. If this value is missing or points at the wrong pod, collaborators can end up reading or writing data in a different Lemma pod.
 
 ## 7. Verify Setup
 
@@ -173,12 +179,18 @@ NEXT_PUBLIC_LEMMA_API_URL=https://api.lemma.work
 NEXT_PUBLIC_LEMMA_AUTH_URL=https://lemma.work/auth
 NEXT_PUBLIC_LEMMA_POD_ID=<your-pod-id>
 NEXT_PUBLIC_LEMMA_ORG_ID=<your-org-id>
+VITE_LEMMA_API_URL=https://api.lemma.work
+VITE_LEMMA_AUTH_URL=https://lemma.work/auth
+VITE_LEMMA_POD_ID=<your-pod-id>
+VITE_LEMMA_ORG_ID=<your-org-id>
 ```
 
 ### Build and deploy
 
 ```bash
 rm -rf .next out
+pnpm check:lemma-env
+
 pnpm build                    # produces out/ directory with static HTML/JS/CSS
 
 VITE_LEMMA_API_URL=https://api.lemma.work \
@@ -187,7 +199,9 @@ VITE_LEMMA_POD_ID=<your-pod-id> \
 lemma apps deploy secondbrain --dist-dir out --create --yes
 ```
 
-The `VITE_LEMMA_*` env vars satisfy the deploy CLI's validation — the actual app config is baked in from the `NEXT_PUBLIC_*` vars at build time.
+The deploy command commonly uses `VITE_LEMMA_*` because the Lemma CLI validates those names. `next.config.ts` mirrors `VITE_LEMMA_*` into the baked Next client env at build time, so building with only `VITE_LEMMA_*` now works.
+
+Before building/deploying, confirm the printed pod is the shared Second Brain pod. Signed-in collaborators must also have access to that pod; authentication identifies the user, while the configured pod id selects the workspace.
 
 ### Make it public
 
