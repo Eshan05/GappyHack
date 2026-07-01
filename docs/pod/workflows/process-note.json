@@ -1,0 +1,50 @@
+{
+  "name": "process-note",
+  "description": "Processes a newly added note: the librarian extracts insights, discovers connections, generates summary and tags.",
+  "start": { "type": "MANUAL" },
+  "nodes": [
+    {
+      "id": "intake",
+      "type": "FORM",
+      "label": "Note Input",
+      "config": {
+        "input_schema": {
+          "type": "object",
+          "required": ["note_id"],
+          "properties": {
+            "note_id": {
+              "type": "string",
+              "description": "ID of the note to process"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "process",
+      "type": "AGENT",
+      "label": "Librarian Processing",
+      "config": {
+        "agent_name": "librarian",
+        "input_mapping": {
+          "note_id": {
+            "value": "intake.note_id",
+            "optional": false,
+            "type": "expression"
+          }
+        }
+      }
+    },
+    {
+      "id": "end",
+      "type": "END",
+      "label": "Done",
+      "config": {}
+    }
+  ],
+  "edges": [
+    { "id": "e1", "source": "intake", "target": "process" },
+    { "id": "e2", "source": "process", "target": "end" }
+  ],
+  "visibility": "POD"
+}

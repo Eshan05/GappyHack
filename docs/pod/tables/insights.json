@@ -1,0 +1,13 @@
+{
+  "name": "insights",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "content", "type": "TEXT", "required": true },
+    { "name": "type", "type": "ENUM", "required": true, "options": ["key_point", "question", "action_item", "connection", "pattern"] },
+    { "name": "note_id", "type": "UUID" },
+    { "name": "confidence", "type": "FLOAT" },
+    { "name": "metadata", "type": "JSON" }
+  ]
+}

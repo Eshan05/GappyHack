@@ -1,0 +1,13 @@
+{
+  "name": "connections",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "source_id", "type": "UUID", "required": true },
+    { "name": "target_id", "type": "UUID", "required": true },
+    { "name": "relationship", "type": "TEXT", "required": true },
+    { "name": "strength", "type": "FLOAT" },
+    { "name": "metadata", "type": "JSON" }
+  ]
+}

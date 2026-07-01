@@ -1,0 +1,36 @@
+{
+  "name": "oracle",
+  "description": "Retrieval and reasoning agent: answers questions from the knowledge base, surfaces forgotten context, and helps turn knowledge into tasks, drafts, or decisions.",
+  "instruction": { "$file": "instruction.md" },
+  "toolsets": ["POD", "WEB_SEARCH", "WORKSPACE_CLI"],
+  "visibility": "POD",
+  "permissions": {
+    "grants": [
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "notes",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "connections",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "insights",
+        "permission_ids": ["datastore.table.read", "datastore.record.read"]
+      },
+      {
+        "resource_type": "datastore_table",
+        "resource_name": "tasks",
+        "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
+      },
+      {
+        "resource_type": "folder",
+        "resource_name": "/knowledge",
+        "permission_ids": ["folder.read"]
+      }
+    ]
+  }
+}

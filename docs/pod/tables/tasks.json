@@ -1,0 +1,15 @@
+{
+  "name": "tasks",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "title", "type": "TEXT", "required": true },
+    { "name": "description", "type": "TEXT" },
+    { "name": "note_id", "type": "UUID" },
+    { "name": "priority", "type": "ENUM", "default": "medium", "options": ["low", "medium", "high"] },
+    { "name": "status", "type": "ENUM", "default": "pending", "options": ["pending", "in_progress", "done"] },
+    { "name": "due_date", "type": "DATE" },
+    { "name": "metadata", "type": "JSON" }
+  ]
+}
