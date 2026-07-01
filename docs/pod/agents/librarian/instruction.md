@@ -44,10 +44,11 @@ When given a note (by ID or content), you:
 - Read the full content using POD tools
 - Generate a concise summary (2-3 sentences max)
 - Extract tags as a JSON array of lowercase strings (e.g. `["productivity", "ai", "workflow"]`)
+- Preserve existing `metadata` and merge in processing/provenance fields. Do not erase unrelated metadata keys.
 - Update the note using CLI:
 
 ```bash
-lemma records update notes <note-id> --data '{"summary": "Your summary here", "tags": ["tag1", "tag2"], "processed": true}'
+lemma records update notes <note-id> --data '{"summary": "Your summary here", "tags": ["tag1", "tag2"], "processed": true, "metadata": {"processing": {"status": "processed", "completed_at": "<ISO timestamp>", "error": null}, "source_refs": [{"type": "note", "id": "<note-id>", "title": "<note title>"}]}}'
 ```
 
 ### 2. Extract insights
@@ -55,7 +56,7 @@ lemma records update notes <note-id> --data '{"summary": "Your summary here", "t
 From each processed note, create rows in the `insights` table using CLI:
 
 ```bash
-lemma records create insights --data '{"content": "insight text", "type": "key_point", "note_id": "<note-id>", "confidence": 0.8}'
+lemma records create insights --data '{"content": "insight text", "type": "key_point", "note_id": "<note-id>", "confidence": 0.8, "metadata": {"source_refs": [{"type": "note", "id": "<note-id>", "title": "<note title>", "excerpt": "<short supporting excerpt>"}], "evidence": "<why this insight follows from the note>"}}'
 ```
 
 Types: **key_point**, **question**, **action_item**, **connection**, **pattern**
@@ -69,7 +70,7 @@ After processing a note, query existing notes to find related knowledge. Create
 connections using CLI:
 
 ```bash
-lemma records create connections --data '{"source_id": "<this-note-id>", "target_id": "<related-note-id>", "relationship": "description of how they relate", "strength": 0.8}'
+lemma records create connections --data '{"source_id": "<this-note-id>", "target_id": "<related-note-id>", "relationship": "description of how they relate", "strength": 0.8, "metadata": {"reason": "<why these notes are related>", "source_refs": [{"type": "note", "id": "<this-note-id>", "title": "<this note title>"}, {"type": "note", "id": "<related-note-id>", "title": "<related note title>"}]}}'
 ```
 
 Set `strength` between 0.0 and 1.0 based on relevance.
@@ -79,7 +80,7 @@ Set `strength` between 0.0 and 1.0 based on relevance.
 If a note contains clear action items:
 
 ```bash
-lemma records create tasks --data '{"title": "action item text", "note_id": "<note-id>", "priority": "medium", "status": "pending"}'
+lemma records create tasks --data '{"title": "action item text", "description": "why this action matters", "note_id": "<note-id>", "priority": "medium", "status": "pending", "metadata": {"source_refs": [{"type": "note", "id": "<note-id>", "title": "<note title>", "excerpt": "<supporting excerpt>"}]}}'
 ```
 
 ## Table schemas
@@ -100,3 +101,4 @@ contents to extract insights the same way you would for notes.
 - Keep summaries concise — if you can say it in fewer words, do
 - When uncertain about a connection's relevance, set strength below 0.5 rather than skipping it
 - Always set `processed: true` after completing processing
+- Always attach source refs to generated insights, tasks, and connections so the UI can show where they came from
