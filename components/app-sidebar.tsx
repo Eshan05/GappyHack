@@ -16,6 +16,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "lemma-sdk/react"
 import { getLemmaClient } from "@/lib/lemma"
+import { useChatDrawer } from "@/context/chat-drawer-context"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,7 @@ const navItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const { isMobile } = useSidebar()
+  const { close: closeChat } = useChatDrawer()
   const { user } = useAuth(getLemmaClient())
   const displayName = user?.name || user?.email?.split("@")[0] || "User"
   const displayEmail = user?.email || ""
@@ -144,7 +146,7 @@ export function AppSidebar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuLinkItem href="/settings">
+                <DropdownMenuLinkItem href="/settings" onClick={closeChat}>
                   <SettingsIcon />
                   <span>Settings</span>
                 </DropdownMenuLinkItem>
