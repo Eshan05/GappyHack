@@ -1,14 +1,7 @@
 import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: "/lemma-api/:path*",
-        destination: "https://api.lemma.work/:path*",
-      },
-    ]
-  },
+  output: "export",
 }
 
 export default nextConfig

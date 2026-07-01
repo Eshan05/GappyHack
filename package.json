@@ -10,6 +10,11 @@
     "lint:es": "eslint",
     "lint:ts": "tsc --noEmit"
   },
+  "packageManager": "pnpm@11.5.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "bun": ">=1.0.0"
+  },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@tailwindcss/typography": "^0.5.20",
