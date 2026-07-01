@@ -1,0 +1,23 @@
+{
+  "name": "insights",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "content", "type": "TEXT", "required": true },
+    { 
+      "name": "type", 
+      "type": "ENUM", 
+      "required": false, 
+      "options": ["key_point", "question", "action_item", "connection", "pattern"] 
+    },
+    { 
+      "name": "note_id", 
+      "type": "UUID", 
+      "required": false, 
+      "foreign_key": { "references": "notes.id" } 
+    },
+    { "name": "confidence", "type": "FLOAT", "required": false },
+    { "name": "metadata", "type": "JSON", "required": false }
+  ]
+}

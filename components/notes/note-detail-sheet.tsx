@@ -193,14 +193,16 @@ export function NoteDetailSheet({
             </Button>
           )}
           <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:bg-destructive/10"
-              >
-                <TrashIcon className="size-3.5" />
-              </Button>
+            <AlertDialogTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10"
+                />
+              }
+            >
+              <TrashIcon className="size-3.5" />
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

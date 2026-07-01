@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { AuthBanner } from "@/components/lemma-provider"
+import { FloatingChat } from "@/components/chat/floating-chat"
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -16,9 +17,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Separator orientation="vertical" className="mr-2 !h-4" />
         </header>
         <AuthBanner />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-4 md:p-6 pb-24 md:pb-6">
           {children}
         </main>
+        <FloatingChat />
       </SidebarInset>
     </SidebarProvider>
   )

@@ -1,0 +1,21 @@
+{
+  "name": "notes",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { "name": "title", "type": "TEXT", "required": true },
+    { "name": "content", "type": "TEXT", "required": true },
+    { 
+      "name": "type", 
+      "type": "ENUM", 
+      "required": false, 
+      "options": ["note", "article", "bookmark"] 
+    },
+    { "name": "source_url", "type": "TEXT", "required": false },
+    { "name": "tags", "type": "JSON", "required": false },
+    { "name": "summary", "type": "TEXT", "required": false },
+    { "name": "processed", "type": "BOOLEAN", "required": false },
+    { "name": "metadata", "type": "JSON", "required": false }
+  ]
+}

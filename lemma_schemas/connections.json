@@ -1,0 +1,23 @@
+{
+  "name": "connections",
+  "primary_key_column": "id",
+  "enable_rls": true,
+  "visibility": "POD",
+  "columns": [
+    { 
+      "name": "source_id", 
+      "type": "UUID", 
+      "required": true, 
+      "foreign_key": { "references": "notes.id" } 
+    },
+    { 
+      "name": "target_id", 
+      "type": "UUID", 
+      "required": true, 
+      "foreign_key": { "references": "notes.id" } 
+    },
+    { "name": "relationship", "type": "TEXT", "required": false },
+    { "name": "strength", "type": "FLOAT", "required": false },
+    { "name": "metadata", "type": "JSON", "required": false }
+  ]
+}
