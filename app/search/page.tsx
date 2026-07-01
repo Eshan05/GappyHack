@@ -1,17 +1,44 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useSearch } from "@/hooks/use-lemma"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SearchIcon, Loader2Icon, GlobeIcon } from "lucide-react"
+import { SearchIcon, Loader2Icon, GlobeIcon, ChevronRightIcon } from "lucide-react"
+import type { GlobalSearchResult } from "lemma-sdk/react"
+
+function getResultHref(result: GlobalSearchResult, query: string) {
+  if (result.kind === "file") {
+    return `/documents?query=${encodeURIComponent(query)}`
+  }
+
+  if (result.tableName === "notes") {
+    return `/notes?open=${encodeURIComponent(result.id)}`
+  }
+
+  if (result.tableName === "tasks") return "/tasks"
+  if (result.tableName === "insights") return "/insights"
+  return "/search"
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState("")
   const [hasSearched, setHasSearched] = useState(false)
-  const { search, results, isLoading } = useSearch()
+  const { search, results, isLoading, error } = useSearch()
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const initialQuery = new URLSearchParams(window.location.search).get("q")?.trim()
+    if (!initialQuery) return
+
+    setQuery(initialQuery)
+    setHasSearched(true)
+    void search({ query: initialQuery })
+  }, [])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -47,28 +74,39 @@ export default function SearchPage() {
         </Button>
       </form>
 
+      {error && <p className="text-xs text-destructive">{error.message}</p>}
+
       {results && results.length > 0 && (
         <div className="space-y-2">
           {results.map((result, i) => (
-            <Card key={i} className="transition-shadow hover:shadow-md">
-              <CardContent className="py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">
-                      {result.title ?? "Result"}
-                    </p>
-                    {result.subtitle && (
-                      <p className="line-clamp-2 text-xs text-muted-foreground">
-                        {result.subtitle}
+            <Link
+              key={`${result.kind}-${i}-${result.title}`}
+              href={getResultHref(result, query)}
+              className="block"
+            >
+              <Card className="transition-shadow hover:shadow-md">
+                <CardContent className="py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate text-sm font-medium">
+                        {result.title ?? "Result"}
                       </p>
-                    )}
+                      {result.subtitle && (
+                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                          {result.subtitle}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant="outline" className="text-[10px]">
+                        {result.kind === "record" ? result.sourceLabel : "Document"}
+                      </Badge>
+                      <ChevronRightIcon className="size-4 text-muted-foreground" />
+                    </div>
                   </div>
-                  <Badge variant="outline" className="shrink-0 text-[10px]">
-                    {result.kind}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

@@ -26,6 +26,7 @@ import {
   PencilIcon,
   SparklesIcon,
   CalendarIcon,
+  Loader2Icon,
 } from "lucide-react"
 
 interface NoteCardProps {
@@ -43,6 +44,7 @@ interface NoteCardProps {
   onEdit: (note: NoteCardProps["note"]) => void
   onDelete: (id: string) => void
   onProcess: (id: string) => void
+  isProcessing?: boolean
 }
 
 const typeConfig: Record<string, { label: string; gradient: string; badge: string }> = {
@@ -78,7 +80,7 @@ const typeConfig: Record<string, { label: string; gradient: string; badge: strin
   },
 }
 
-export function NoteCard({ note, onClick, onEdit, onDelete, onProcess }: NoteCardProps) {
+export function NoteCard({ note, onClick, onEdit, onDelete, onProcess, isProcessing = false }: NoteCardProps) {
   const config = typeConfig[note.type] ?? typeConfig.note
   const [deleteOpen, setDeleteOpen] = useState(false)
 
@@ -100,7 +102,8 @@ export function NoteCard({ note, onClick, onEdit, onDelete, onProcess }: NoteCar
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label="Note actions"
+                  className="size-7 shrink-0 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                   onClick={(e) => e.stopPropagation()}
                 />
               }
@@ -113,9 +116,16 @@ export function NoteCard({ note, onClick, onEdit, onDelete, onProcess }: NoteCar
                 Edit
               </DropdownMenuItem>
               {!note.processed && (
-                <DropdownMenuItem onClick={() => onProcess(note.id)}>
-                  <SparklesIcon className="mr-2 size-4" />
-                  Process with AI
+                <DropdownMenuItem
+                  disabled={isProcessing}
+                  onClick={() => onProcess(note.id)}
+                >
+                  {isProcessing ? (
+                    <Loader2Icon className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <SparklesIcon className="mr-2 size-4" />
+                  )}
+                  {isProcessing ? "Processing..." : "Process with AI"}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
@@ -142,6 +152,12 @@ export function NoteCard({ note, onClick, onEdit, onDelete, onProcess }: NoteCar
             <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-300">
               <SparklesIcon className="mr-1 size-2.5" />
               processed
+            </Badge>
+          )}
+          {isProcessing && (
+            <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300">
+              <Loader2Icon className="mr-1 size-2.5 animate-spin" />
+              processing
             </Badge>
           )}
         </div>

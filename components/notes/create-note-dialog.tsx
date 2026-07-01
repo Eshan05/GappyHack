@@ -30,7 +30,7 @@ interface CreateNoteDialogProps {
     type: string
     source_url?: string
     tags?: string[]
-  }) => void
+  }) => void | Promise<void>
   initial?: {
     id?: string
     title: string
@@ -54,29 +54,55 @@ export function CreateNoteDialog({
   const [tagsInput, setTagsInput] = useState(
     initial?.tags?.join(", ") ?? ""
   )
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState<string | null>(null)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (isSubmitting) return
+    setFormError(null)
+
+    const trimmedTitle = title.trim()
+    const trimmedContent = content.trim()
+    const trimmedUrl = sourceUrl.trim()
+
+    if (!trimmedTitle || !trimmedContent) {
+      setFormError("Title and content are required.")
+      return
+    }
+
+    if (trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)) {
+      setFormError("Use a full URL that starts with http:// or https://.")
+      return
+    }
+
     const tags = tagsInput
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean)
-    const safeUrl = sourceUrl && /^https?:\/\//i.test(sourceUrl) ? sourceUrl : undefined
-    onSubmit({
-      title,
-      content,
-      type,
-      source_url: safeUrl,
-      tags: tags.length > 0 ? tags : undefined,
-    })
-    if (!initial) {
-      setTitle("")
-      setContent("")
-      setType("note")
-      setSourceUrl("")
-      setTagsInput("")
+
+    setIsSubmitting(true)
+    try {
+      await onSubmit({
+        title: trimmedTitle,
+        content: trimmedContent,
+        type,
+        source_url: trimmedUrl || undefined,
+        tags: tags.length > 0 ? tags : undefined,
+      })
+      if (!initial) {
+        setTitle("")
+        setContent("")
+        setType("note")
+        setSourceUrl("")
+        setTagsInput("")
+      }
+      onOpenChange(false)
+    } catch {
+      setFormError(initial ? "Failed to save note." : "Failed to create note.")
+    } finally {
+      setIsSubmitting(false)
     }
-    onOpenChange(false)
   }
 
   return (
@@ -129,7 +155,10 @@ export function CreateNoteDialog({
                 id="source_url"
                 type="url"
                 value={sourceUrl}
-                onChange={(e) => setSourceUrl(e.target.value)}
+                onChange={(e) => {
+                  setSourceUrl(e.target.value)
+                  setFormError(null)
+                }}
                 placeholder="https://..."
               />
             </div>
@@ -143,15 +172,19 @@ export function CreateNoteDialog({
               placeholder="ai, research, ideas"
             />
           </div>
+          {formError && <p className="text-xs text-destructive">{formError}</p>}
           <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
+              disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>
-            <Button type="submit">{initial ? "Save" : "Create"}</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (initial ? "Saving..." : "Creating...") : initial ? "Save" : "Create"}
+            </Button>
           </div>
         </form>
       </DialogContent>

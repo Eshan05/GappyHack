@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LemmaProvider, AuthGate } from "@/components/lemma-provider"
 import { ChatDrawerProvider } from "@/context/chat-drawer-context"
+import { OracleChatProvider } from "@/context/oracle-chat-context"
 import { AppShell } from "@/components/app-shell"
 import { Toaster } from "@/components/ui/sonner"
 
@@ -39,7 +40,9 @@ export default function RootLayout({
           <LemmaProvider>
             <AuthGate>
               <ChatDrawerProvider>
-                <AppShell>{children}</AppShell>
+                <OracleChatProvider>
+                  <AppShell>{children}</AppShell>
+                </OracleChatProvider>
                 <Toaster />
               </ChatDrawerProvider>
             </AuthGate>

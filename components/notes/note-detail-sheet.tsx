@@ -27,6 +27,7 @@ import {
   TagIcon,
   LinkIcon,
   ExternalLinkIcon,
+  Loader2Icon,
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -75,6 +76,7 @@ interface NoteDetailSheetProps {
   onEdit: (note: NoteDetailSheetProps["note"]) => void
   onDelete: (id: string) => void
   onProcess: (id: string) => void
+  isProcessing?: boolean
 }
 
 export function NoteDetailSheet({
@@ -84,6 +86,7 @@ export function NoteDetailSheet({
   onEdit,
   onDelete,
   onProcess,
+  isProcessing = false,
 }: NoteDetailSheetProps) {
   if (!note) return null
 
@@ -101,6 +104,12 @@ export function NoteDetailSheet({
               <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-300">
                 <SparklesIcon className="mr-1 size-2.5" />
                 processed
+              </Badge>
+            )}
+            {isProcessing && (
+              <Badge variant="outline" className="border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300">
+                <Loader2Icon className="mr-1 size-2.5 animate-spin" />
+                processing
               </Badge>
             )}
           </div>
@@ -183,13 +192,18 @@ export function NoteDetailSheet({
               variant="outline"
               size="sm"
               className="flex-1"
+              disabled={isProcessing}
               onClick={() => {
                 onProcess(note.id)
                 onOpenChange(false)
               }}
             >
-              <SparklesIcon className="mr-1.5 size-3.5" />
-              Process
+              {isProcessing ? (
+                <Loader2Icon className="mr-1.5 size-3.5 animate-spin" />
+              ) : (
+                <SparklesIcon className="mr-1.5 size-3.5" />
+              )}
+              {isProcessing ? "Processing" : "Process"}
             </Button>
           )}
           <AlertDialog>

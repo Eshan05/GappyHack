@@ -1,25 +1,44 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useUploadDocument, useKnowledgeSearch } from "@/hooks/use-lemma"
+import { useChatDrawer } from "@/context/chat-drawer-context"
 import {
   UploadIcon,
   FileIcon,
   SearchIcon,
   Loader2Icon,
   CheckCircleIcon,
+  SparklesIcon,
 } from "lucide-react"
 import { toast } from "sonner"
+
+function getFileName(path: string) {
+  return path.split("/").pop() ?? "Document"
+}
 
 export function DocumentUpload() {
   const { upload, isSubmitting: uploading } = useUploadDocument()
   const { search, results, isLoading: searching } = useKnowledgeSearch()
+  const { openWithQuery } = useChatDrawer()
   const [searchQuery, setSearchQuery] = useState("")
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
+  const [hasSearched, setHasSearched] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const initialQuery = new URLSearchParams(window.location.search).get("query")?.trim()
+    if (!initialQuery) return
+
+    setSearchQuery(initialQuery)
+    setHasSearched(true)
+    void search({ query: initialQuery, searchMethod: "HYBRID" as never })
+  }, [])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
@@ -41,6 +60,7 @@ export function DocumentUpload() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
     if (!searchQuery.trim()) return
+    setHasSearched(true)
     search({ query: searchQuery, searchMethod: "HYBRID" as never })
   }
 
@@ -52,7 +72,7 @@ export function DocumentUpload() {
         </CardHeader>
         <CardContent>
           <div
-            className="flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-10 transition-all hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm"
+            className="group flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-10 transition-all hover:border-primary/50 hover:bg-muted/30 hover:shadow-sm"
             onClick={() => fileInputRef.current?.click()}
           >
             {uploading ? (
@@ -117,24 +137,49 @@ export function DocumentUpload() {
           </form>
           {results && results.length > 0 && (
             <div className="mt-4 space-y-3">
-              {results.map((result, i) => (
-                <div key={i} className="rounded-md border p-3">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <FileIcon className="size-4 text-muted-foreground" />
-                    {result.path.split("/").pop() ?? "Document"}
+              {results.map((result, i) => {
+                const fileName = getFileName(result.path)
+                const excerpt = result.content ? `\n\nMatched excerpt:\n${result.content.slice(0, 700)}` : ""
+
+                return (
+                  <div key={`${result.file_id}-${result.chunk_index}-${i}`} className="rounded-md border p-3">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <FileIcon className="size-4 text-muted-foreground" />
+                      {fileName}
+                    </div>
+                    {result.content && (
+                      <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
+                        {result.content}
+                      </p>
+                    )}
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      {result.score != null ? (
+                        <p className="text-[10px] text-muted-foreground/60">
+                          Relevance: {(result.score * 100).toFixed(0)}%
+                        </p>
+                      ) : (
+                        <span />
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          openWithQuery(`Use the document result from ${fileName} to answer: ${searchQuery}${excerpt}`)
+                        }}
+                      >
+                        <SparklesIcon className="size-3.5" />
+                        Ask Oracle
+                      </Button>
+                    </div>
                   </div>
-                  {result.content && (
-                    <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">
-                      {result.content}
-                    </p>
-                  )}
-                  {result.score != null && (
-                    <p className="mt-1 text-[10px] text-muted-foreground/60">
-                      Relevance: {(result.score * 100).toFixed(0)}%
-                    </p>
-                  )}
-                </div>
-              ))}
+                )
+              })}
+            </div>
+          )}
+          {hasSearched && !searching && results.length === 0 && (
+            <div className="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+              No matching document sections found.
             </div>
           )}
         </CardContent>

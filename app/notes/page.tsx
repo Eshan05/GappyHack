@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNotes, useCreateNote, useUpdateNote, useDeleteNote, useProcessNote } from "@/hooks/use-lemma"
 import { NoteCard } from "@/components/notes/note-card"
 import { NoteDetailSheet } from "@/components/notes/note-detail-sheet"
@@ -24,6 +24,8 @@ export default function NotesPage() {
   const [selectedNote, setSelectedNote] = useState<Record<string, unknown> | null>(null)
   const [search, setSearch] = useState("")
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set())
+  const [openedFromUrl, setOpenedFromUrl] = useState<string | null>(null)
 
   const allTags = Array.from(
     new Set(
@@ -44,6 +46,19 @@ export default function NotesPage() {
     return matchesSearch && matchesTag
   })
 
+  useEffect(() => {
+    if (typeof window === "undefined" || notes.length === 0) return
+
+    const noteId = new URLSearchParams(window.location.search).get("open")
+    if (!noteId || openedFromUrl === noteId) return
+
+    const note = notes.find((item: Record<string, unknown>) => item.id === noteId)
+    if (note) {
+      setSelectedNote(note as Record<string, unknown>)
+      setOpenedFromUrl(noteId)
+    }
+  }, [notes, openedFromUrl])
+
   async function handleCreate(data: Record<string, unknown>) {
     try {
       await create({ ...data, processed: false })
@@ -51,6 +66,7 @@ export default function NotesPage() {
       refresh()
     } catch {
       toast.error("Failed to create note")
+      throw new Error("Failed to create note")
     }
   }
 
@@ -59,10 +75,10 @@ export default function NotesPage() {
     try {
       await update(data, { recordId: editingNote.id as string })
       toast.success("Note updated")
-      setEditingNote(null)
       refresh()
     } catch {
       toast.error("Failed to update note")
+      throw new Error("Failed to update note")
     }
   }
 
@@ -77,11 +93,26 @@ export default function NotesPage() {
   }
 
   async function handleProcess(id: string) {
+    if (processingIds.has(id)) return
+
+    setProcessingIds((prev) => new Set(prev).add(id))
     try {
       await start({ note_id: id })
-      toast.success("Processing note with AI...")
-      setTimeout(() => refresh(), 3000)
+      toast.success("AI processing started")
+      setTimeout(() => {
+        refresh()
+        setProcessingIds((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        })
+      }, 4000)
     } catch {
+      setProcessingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
       toast.error("Failed to process note")
     }
   }
@@ -183,6 +214,7 @@ export default function NotesPage() {
               }}
               onDelete={handleDelete}
               onProcess={handleProcess}
+              isProcessing={processingIds.has(note.id as string)}
             />
           ))}
         </div>
@@ -197,6 +229,7 @@ export default function NotesPage() {
         onEdit={(n) => setEditingNote(n as unknown as Record<string, unknown>)}
         onDelete={handleDelete}
         onProcess={handleProcess}
+        isProcessing={selectedNote ? processingIds.has(selectedNote.id as string) : false}
       />
 
       <CreateNoteDialog

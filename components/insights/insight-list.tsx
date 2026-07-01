@@ -1,8 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useInsights } from "@/hooks/use-lemma"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   LightbulbIcon,
@@ -68,6 +70,9 @@ export function InsightList() {
             Process notes with AI to extract insights automatically.
           </p>
         </div>
+        <Button variant="outline" render={<Link href="/notes" />}>
+          Go to Notes
+        </Button>
       </div>
     )
   }

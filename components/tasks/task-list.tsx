@@ -1,8 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useTasks, useUpdateTask } from "@/hooks/use-lemma"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -91,6 +93,9 @@ export function TaskList() {
               Process notes with AI to generate tasks automatically.
             </p>
           </div>
+          <Button variant="outline" render={<Link href="/notes" />}>
+            Go to Notes
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">

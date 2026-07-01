@@ -1,13 +1,16 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { useOracleChat, useUploadDocument } from "@/hooks/use-lemma"
+import { useUploadDocument } from "@/hooks/use-lemma"
+import { useOracleChat } from "@/context/oracle-chat-context"
 import { useChatDrawer } from "@/context/chat-drawer-context"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { ChatInstanceMenu } from "@/components/chat/chat-instances"
 import {
   Sheet,
   SheetContent,
@@ -25,6 +28,7 @@ import {
   PaperclipIcon,
   Loader2Icon,
   ArrowRightIcon,
+  PlusIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { AssistantRenderableMessage } from "lemma-sdk/react"
@@ -38,12 +42,35 @@ const defaultSuggestions = [
 
 export function FloatingChat() {
   const { isOpen, setIsOpen, initialQuery, clearInitialQuery } = useChatDrawer()
-  const { messages, sendMessage, isLoading } = useOracleChat()
+  const pathname = usePathname()
+  const {
+    messages,
+    conversations,
+    activeConversationId,
+    selectConversation,
+    sendMessage,
+    isLoading,
+    isLoadingConversations,
+    isLoadingMoreConversations,
+    hasMoreConversations,
+    loadMoreConversations,
+    error,
+  } = useOracleChat()
   const { upload, isSubmitting: isUploading } = useUploadDocument()
   
   const [input, setInput] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pathnameRef = useRef(pathname)
+  const initialQueryRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (pathnameRef.current !== pathname) {
+      pathnameRef.current = pathname
+      setIsOpen(false)
+      clearInitialQuery()
+    }
+  }, [pathname, setIsOpen, clearInitialQuery])
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -55,12 +82,25 @@ export function FloatingChat() {
     }
   }, [messages, isLoading])
 
-  // Handle Initial Query from Homepage
+  // Handle initial query from dashboard quick prompts.
   useEffect(() => {
-    if (isOpen && initialQuery) {
-      sendMessage(initialQuery)
-      clearInitialQuery()
-    }
+    if (!isOpen || !initialQuery) return
+    if (initialQueryRef.current === initialQuery) return
+
+    initialQueryRef.current = initialQuery
+    clearInitialQuery()
+    void sendMessage(initialQuery, {
+      forceNewConversation: true,
+      conversationMetadata: { source: "quick_prompt" },
+    })
+      .catch(() => {
+        toast.error("Failed to send message")
+      })
+      .finally(() => {
+        if (initialQueryRef.current === initialQuery) {
+          initialQueryRef.current = null
+        }
+      })
   }, [isOpen, initialQuery, sendMessage, clearInitialQuery])
 
   // Send message
@@ -74,6 +114,11 @@ export function FloatingChat() {
     } catch {
       toast.error("Failed to send message")
     }
+  }
+
+  function handleNewChat() {
+    selectConversation(null)
+    setInput("")
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -141,6 +186,8 @@ export function FloatingChat() {
     ]
   }
 
+  if (pathname === "/chat") return null
+
   return (
     <>
       {/* Floating Action Button */}
@@ -187,24 +234,45 @@ export function FloatingChat() {
           className="min-h-0 gap-0 overflow-hidden border-gray-100 bg-white p-0 shadow-2xl data-[side=right]:w-full! data-[side=right]:sm:w-[480px]! data-[side=right]:sm:max-w-none! dark:border-zinc-900 dark:bg-zinc-950"
         >
               {/* Header */}
-              <SheetHeader className="shrink-0 flex-row items-center justify-between border-b border-gray-100 bg-gray-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/20">
-                <div className="flex items-center gap-2.5">
+              <SheetHeader className="shrink-0 flex-row items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/50 p-4 dark:border-zinc-900 dark:bg-zinc-900/20">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/10">
                     <BrainIcon className="size-5 text-white" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <SheetTitle className="text-sm font-bold text-foreground">Oracle Assistant</SheetTitle>
-                    <p className="text-[10px] text-muted-foreground font-medium">Context-aware Second Brain AI</p>
+                    <ChatInstanceMenu
+                      conversations={conversations}
+                      activeConversationId={activeConversationId}
+                      isLoadingConversations={isLoadingConversations}
+                      isLoadingMoreConversations={isLoadingMoreConversations}
+                      hasMoreConversations={hasMoreConversations}
+                      onSelectConversation={selectConversation}
+                      onNewChat={handleNewChat}
+                      onLoadMoreConversations={loadMoreConversations}
+                      className="mt-1 h-7 max-w-[210px] text-[11px]"
+                    />
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
-                >
-                  <XIcon className="size-4" />
-                </Button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNewChat}
+                    className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
+                  >
+                    <PlusIcon className="size-4" />
+                    <span className="sr-only">New chat</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsOpen(false)}
+                    className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
+                  >
+                    <XIcon className="size-4" />
+                  </Button>
+                </div>
               </SheetHeader>
 
               {/* Chat Conversation Area */}
@@ -317,6 +385,8 @@ export function FloatingChat() {
               {/* Chat Input Footer */}
               <div className="shrink-0 p-4 border-t border-gray-100 dark:border-zinc-900 space-y-3 bg-white dark:bg-zinc-950">
                 
+                {error && <p className="text-xs text-destructive">{error}</p>}
+
                 {/* Suggested follow-ups */}
                 {messages.length > 0 && !isLoading && (
                   <div className="flex flex-wrap gap-1.5 max-h-[72px] overflow-y-auto no-scrollbar">

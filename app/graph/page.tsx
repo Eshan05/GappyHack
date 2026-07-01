@@ -1,8 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useNotes, useConnections } from "@/hooks/use-lemma"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useState, useMemo } from "react"
 import {
@@ -104,6 +106,9 @@ export default function GraphPage() {
           <p className="text-sm text-muted-foreground/60">
             Create notes and process them with AI to discover connections.
           </p>
+          <Button variant="outline" render={<Link href="/notes" />}>
+            Go to Notes
+          </Button>
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-3">
@@ -234,11 +239,29 @@ function GraphVisualization({
     const pos = new Map<string, { x: number; y: number }>()
     const count = notes.length
     if (count === 0) return pos
+
     const cx = 350
     const cy = 200
-    const radius = Math.min(150, 50 + count * 20)
+    if (count === 1) {
+      pos.set(notes[0].id as string, { x: cx, y: cy })
+      return pos
+    }
+
+    const useRings = count > 16
+    const innerCount = useRings ? Math.ceil(count * 0.38) : count
+
     notes.forEach((note, i) => {
-      const angle = (2 * Math.PI * i) / count - Math.PI / 2
+      const outerRing = useRings && i >= innerCount
+      const ringIndex = outerRing ? i - innerCount : i
+      const ringCount = outerRing ? count - innerCount : innerCount
+      const radius = useRings
+        ? outerRing
+          ? 165
+          : 82
+        : Math.min(150, 50 + count * 20)
+      const angleOffset = outerRing ? Math.PI / Math.max(ringCount, 1) : 0
+      const angle = (2 * Math.PI * ringIndex) / Math.max(ringCount, 1) - Math.PI / 2 + angleOffset
+
       pos.set(note.id as string, {
         x: cx + radius * Math.cos(angle),
         y: cy + radius * Math.sin(angle),
@@ -297,6 +320,7 @@ function GraphVisualization({
         const pos = positions.get(note.id as string)
         if (!pos) return null
         const isSelected = selectedNote === note.id
+        const title = ((note.title as string) ?? "Untitled").trim() || "Untitled"
         const isConnected =
           selectedNote &&
           noteConnections.get(selectedNote)?.has(note.id as string)
@@ -305,11 +329,20 @@ function GraphVisualization({
         return (
           <g
             key={note.id as string}
-            className="cursor-pointer"
+            role="button"
+            tabIndex={0}
+            aria-label={`Select ${title}`}
+            className="cursor-pointer outline-none"
             onClick={() =>
               onSelect(isSelected ? null : (note.id as string))
             }
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" && event.key !== " ") return
+              event.preventDefault()
+              onSelect(isSelected ? null : (note.id as string))
+            }}
           >
+            <title>{title}</title>
             {isSelected && (
               <circle cx={pos.x} cy={pos.y} r={30} fill="url(#node-glow)" />
             )}
@@ -340,8 +373,8 @@ function GraphVisualization({
               className="fill-current text-[10px]"
               opacity={dimmed ? 0.2 : 0.7}
             >
-              {((note.title as string) ?? "").slice(0, 18)}
-              {((note.title as string) ?? "").length > 18 ? "…" : ""}
+              {title.slice(0, 18)}
+              {title.length > 18 ? "…" : ""}
             </text>
           </g>
         )

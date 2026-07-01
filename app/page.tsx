@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useNotes, useInsights, useTasks, useCreateNote, useProcessNote } from "@/hooks/use-lemma"
 import { useChatDrawer } from "@/context/chat-drawer-context"
@@ -115,6 +116,7 @@ function uniquePrompts(prompts: QuickPrompt[]) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { records: notes, refresh: refreshNotes } = useNotes()
   const { records: insights } = useInsights()
   const { records: tasks, refresh: refreshTasks } = useTasks()
@@ -141,8 +143,9 @@ export default function DashboardPage() {
   // Handle Search Submit
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!searchQuery.trim()) return
-    openWithQuery(searchQuery.trim())
+    const query = searchQuery.trim()
+    if (!query) return
+    router.push(`/search?q=${encodeURIComponent(query)}`)
     setSearchQuery("")
   }
 
@@ -155,23 +158,29 @@ export default function DashboardPage() {
 
   // Create Note Submit
   const handleCreateNote = async (data: Record<string, unknown>) => {
+    let newNote: Record<string, unknown> | undefined
+
     try {
-      const newNote = await createNote({ ...data, processed: false })
+      newNote = await createNote({ ...data, processed: false }) as Record<string, unknown>
       toast.success("Note created successfully")
       setDialogOpen(false)
       refreshNotes()
+    } catch {
+      toast.error("Failed to create note")
+      throw new Error("Failed to create note")
+    }
 
-      // Automatically trigger AI processing
-      if (newNote && newNote.id) {
+    if (newNote?.id) {
+      try {
         await processNote({ note_id: newNote.id as string })
         toast.info("AI is analyzing and linking your note...")
         setTimeout(() => {
           refreshNotes()
           refreshTasks()
         }, 4000)
+      } catch {
+        toast.error("Note created, but AI processing did not start")
       }
-    } catch {
-      toast.error("Failed to create note")
     }
   }
 
