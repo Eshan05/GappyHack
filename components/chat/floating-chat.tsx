@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUploadDocument } from "@/hooks/use-lemma"
+import { KNOWLEDGE_STORAGE_PATH } from "@/lib/knowledge-files"
+import { ensureKnowledgeFolder } from "@/lib/knowledge-files-client"
 import { useBrowserPathname } from "@/hooks/use-browser-pathname"
 import { useOracleChat } from "@/context/oracle-chat-context"
 import { useChatDrawer } from "@/context/chat-drawer-context"
@@ -135,12 +137,13 @@ export function FloatingChat() {
     
     try {
       toast.loading(`Uploading ${file.name}...`)
-      await upload(file, { directoryPath: "/knowledge", name: file.name })
+      await ensureKnowledgeFolder()
+      await upload(file, { directoryPath: KNOWLEDGE_STORAGE_PATH, name: file.name })
       toast.dismiss()
       toast.success(`Uploaded ${file.name} to knowledge base!`)
       
       // Auto-notify the assistant about the upload
-      await sendMessage(`I just uploaded a document named ${file.name}. Can you summarize it for me?`)
+      await sendMessage(`I just uploaded a document named ${file.name} in my private knowledge folder. Can you summarize it for me?`)
     } catch {
       toast.dismiss()
       toast.error("Failed to upload document")

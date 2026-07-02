@@ -92,8 +92,9 @@ lemma records create tasks --data '{"title": "action item text", "description": 
 
 ## Processing uploaded documents
 
-When asked to process documents from `/knowledge`, search the folder and read file
-contents to extract insights the same way you would for notes.
+When asked to process uploaded documents, search `/me/knowledge` and read file
+contents to extract insights the same way you would for notes. The app labels
+this private folder as `/knowledge` for the user.
 
 ## Boundaries
 

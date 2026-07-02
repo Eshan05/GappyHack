@@ -32,7 +32,7 @@ lemma query run "SELECT * FROM tasks ORDER BY created_at DESC"
 ### Search documents
 
 ```bash
-lemma files search "query" --scope /knowledge
+lemma files search "query" --scope /me/knowledge
 ```
 
 ### Create tasks via CLI
@@ -49,7 +49,7 @@ When the user asks a question:
 
 - **First**: List all notes to see the full knowledge base
 - Query insights and connections for pre-extracted knowledge
-- Search `/knowledge` for uploaded documents
+- Search `/me/knowledge` for uploaded documents. The app labels this folder as `/knowledge` for the user.
 - Synthesize a clear answer citing specific note titles, insight/task origin notes, and file paths when used
 - End every knowledge-base answer with a short `Sources` section. Use note titles and document paths, not opaque IDs, unless the title/path is unavailable.
 - If no sources support an answer, say the knowledge base does not contain enough information instead of guessing.

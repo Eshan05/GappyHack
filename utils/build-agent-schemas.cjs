@@ -31,11 +31,6 @@ const librarianConfig = {
         "resource_type": "datastore_table",
         "resource_name": "tasks",
         "permission_ids": ["datastore.record.read", "datastore.record.write", "datastore.table.read"]
-      },
-      {
-        "resource_type": "folder",
-        "resource_name": "/knowledge",
-        "permission_ids": ["folder.read"]
       }
     ]
   }
@@ -68,11 +63,6 @@ const oracleConfig = {
         "resource_type": "datastore_table",
         "resource_name": "tasks",
         "permission_ids": ["datastore.record.read", "datastore.record.write", "datastore.table.read"]
-      },
-      {
-        "resource_type": "folder",
-        "resource_name": "/knowledge",
-        "permission_ids": ["folder.read"]
       }
     ]
   }
