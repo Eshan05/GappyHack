@@ -38,7 +38,7 @@ lemma tables create tasks       --file docs/pod/tables/tasks.json
 ## 3. Create the Knowledge Folder
 
 ```bash
-lemma files mkdir /knowledge
+lemma files mkdir /me/knowledge
 ```
 
 Uploaded documents (PDF, DOCX, etc.) go here and are auto-indexed for semantic search.
@@ -56,7 +56,7 @@ lemma agents create --file docs/pod/agents/oracle/agent.json
 ### librarian
 
 - **Toolsets**: `POD`, `WORKSPACE_CLI`
-- **Grants**: read + write on all 4 tables, read on `/knowledge`
+- **Grants**: read + write on all 4 tables. Personal `/me/knowledge` files resolve under the invoking user and do not use pod-level folder grants.
 - **Role**: processes new notes — extracts summary, tags, insights, discovers connections, creates tasks
 - **Config**: [`docs/pod/agents/librarian/agent.json`](pod/agents/librarian/agent.json)
 - **Instruction**: [`docs/pod/agents/librarian/instruction.md`](pod/agents/librarian/instruction.md)
@@ -64,7 +64,7 @@ lemma agents create --file docs/pod/agents/oracle/agent.json
 ### oracle
 
 - **Toolsets**: `POD`, `WEB_SEARCH`, `WORKSPACE_CLI`
-- **Grants**: read on notes/connections/insights, read + write on tasks, read on `/knowledge`
+- **Grants**: read on notes/connections/insights, read + write on tasks. Personal `/me/knowledge` files resolve under the invoking user and do not use pod-level folder grants.
 - **Role**: answers questions from the knowledge base, surfaces forgotten context, creates tasks
 - **Config**: [`docs/pod/agents/oracle/agent.json`](pod/agents/oracle/agent.json)
 - **Instruction**: [`docs/pod/agents/oracle/instruction.md`](pod/agents/oracle/instruction.md)
@@ -113,7 +113,7 @@ lemma pods describe          # should show 4 tables, 2 agents, 1 workflow
 lemma tables list            # notes, connections, insights, tasks
 lemma agents list            # oracle, librarian
 lemma workflows list         # process-note
-lemma files ls /knowledge    # should exist (empty is fine)
+lemma files ls /me/knowledge # should exist (empty is fine)
 ```
 
 ## 8. Quick Test

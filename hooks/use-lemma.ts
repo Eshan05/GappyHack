@@ -1,6 +1,7 @@
 "use client"
 
 import { getLemmaClient } from "@/lib/lemma"
+import { KNOWLEDGE_STORAGE_PATH } from "@/lib/knowledge-files"
 import type { RecordFilter } from "lemma-sdk"
 import {
   useRecords,
@@ -9,6 +10,7 @@ import {
   useDeleteRecord,
   useRecord,
   useFileSearch,
+  useFiles,
   useGlobalSearch,
   useAssistantController,
   useUploadFile,
@@ -98,7 +100,21 @@ export function useConnections(noteId?: string) {
 // ── Search ──
 
 export function useKnowledgeSearch() {
-  return useFileSearch({ client: client() })
+  return useFileSearch({
+    client: client(),
+    scopePath: KNOWLEDGE_STORAGE_PATH,
+    scopeMode: "SUBTREE",
+  })
+}
+
+export function useKnowledgeFiles(options?: { autoLoad?: boolean; enabled?: boolean }) {
+  return useFiles({
+    client: client(),
+    directoryPath: KNOWLEDGE_STORAGE_PATH,
+    limit: 50,
+    autoLoad: options?.autoLoad,
+    enabled: options?.enabled,
+  })
 }
 
 export function useSearch() {

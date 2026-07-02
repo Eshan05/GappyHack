@@ -25,11 +25,6 @@
         "resource_type": "datastore_table",
         "resource_name": "tasks",
         "permission_ids": ["datastore.table.read", "datastore.record.read", "datastore.record.write"]
-      },
-      {
-        "resource_type": "folder",
-        "resource_name": "/knowledge",
-        "permission_ids": ["folder.read"]
       }
     ]
   }

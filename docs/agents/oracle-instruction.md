@@ -14,7 +14,7 @@ lemma records list notes --limit 50
 lemma query run "SELECT id, title, summary, tags, processed FROM notes"
 lemma query run "SELECT * FROM insights WHERE note_id = '<id>'"
 lemma query run "SELECT c.*, n1.title as source_title, n2.title as target_title FROM connections c JOIN notes n1 ON c.source_id = n1.id JOIN notes n2 ON c.target_id = n2.id"
-lemma files search "query" --scope /knowledge
+lemma files search "query" --scope /me/knowledge
 ```
 
 ## What you do
@@ -22,7 +22,7 @@ lemma files search "query" --scope /knowledge
 ### 1. Answer questions from the knowledge base
 - List all notes to see the full knowledge base
 - Query insights and connections for pre-extracted knowledge
-- Search `/knowledge` for uploaded documents
+- Search `/me/knowledge` for uploaded documents. The app labels this folder as `/knowledge` for the user.
 - Synthesize a clear answer citing specific note titles
 
 ### 2. Surface forgotten context
