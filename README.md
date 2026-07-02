@@ -2,7 +2,7 @@
 
 Second Brain is a modern, premium Next.js application that integrates with **Lemma** to provide a secure, AI-powered knowledge management system. Users can create notes, upload documents, explore an interactive connection graph, and chat with an AI Oracle that understands their personal knowledge base.
 
-All user data is stored securely in a dedicated **Lemma Pod** with Row-Level Security (RLS) ensuring strict user-level isolation. For a visual representation of how the components, workflows, and agents connect, see the [Architecture Flow Diagram](ARCHITECTURE.md).
+All user data is stored securely in a dedicated **Lemma Pod** with Row-Level Security (RLS) ensuring strict user-level isolation. For a visual representation of how the components, workflows, and agents connect, see the [Architecture Flow Diagram](docs/ARCHITECTURE.md).
 
 ---
 
