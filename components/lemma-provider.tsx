@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { setTestingToken } from "lemma-sdk"
 import { useEffect, useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { getConfiguredLemmaPodId, getLemmaClient, getLemmaConfigError } from "@/lib/lemma"
 import { useAuth, usePodAccess } from "lemma-sdk/react"
 import {
@@ -227,9 +227,22 @@ function PodAccessRequired({
 
 function AuthGate({ children }: { children: ReactNode }) {
   const configError = getLemmaConfigError()
+  const pathname = usePathname()
 
   if (configError) {
     return <AuthConfigError message={configError} />
+  }
+
+  // Bypass AuthGate for the landing page unless we have a pending return-to redirect.
+  let hasPendingReturnTo = false
+  try {
+    hasPendingReturnTo = !!localStorage.getItem(AUTH_RETURN_TO_KEY)
+  } catch {
+    hasPendingReturnTo = false
+  }
+
+  if (pathname === "/" && !hasPendingReturnTo) {
+    return <>{children}</>
   }
 
   return <AuthGateInner>{children}</AuthGateInner>

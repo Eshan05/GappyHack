@@ -1,6 +1,7 @@
 "use client"
 
 import { type ReactNode } from "react"
+import { usePathname } from "next/navigation"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { RouteContentRouter } from "@/components/route-content-router"
@@ -9,6 +10,18 @@ import { FloatingChat } from "@/components/chat/floating-chat"
 import { ModeToggle } from "@/components/shared/mode-toggle"
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+
+  if (pathname === "/") {
+    return (
+      <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <main className="flex-1">
+          <RouteContentRouter>{children}</RouteContentRouter>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <SidebarProvider>
       <AppSidebar />
