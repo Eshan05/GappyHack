@@ -1,10 +1,6 @@
 # Second Brain — AI-Powered Knowledge Workspace
 
-Second Brain is a modern, premium Next.js application that integrates with **Lemma** to provide a secure, AI-powered knowledge management system. Users can create notes, upload documents, explore an interactive connection graph, and chat with an AI Oracle that understands their personal knowledge base.
-
-All user data is stored securely in a dedicated **Lemma Pod** with Row-Level Security (RLS) ensuring strict user-level isolation. For a visual representation of how the components, workflows, and agents connect, see the [Architecture Flow Diagram](docs/ARCHITECTURE.md).
-
----
+Second Brain integrates with **Lemma** to provide a secure, AI-powered knowledge management system. Users can create notes, upload documents, explore an interactive connection graph, and chat with an AI Oracle that understands their personal knowledge base.  For a visual representation of how the components, workflows, and agents connect, see the [Architecture Flow Diagram](docs/ARCHITECTURE.md).
 
 ## 🚀 Features
 
@@ -15,7 +11,6 @@ All user data is stored securely in a dedicated **Lemma Pod** with Row-Level Sec
 - **Actionable Tasks Dashboard**: Manage tasks automatically extracted from your notes, categorized by priority and status.
 - **Settings & Control Panel**: View configuration status, switch themes, or manage development tokens.
 
----
 
 ## 🛠️ Tech Stack
 
@@ -24,14 +19,12 @@ All user data is stored securely in a dedicated **Lemma Pod** with Row-Level Sec
 - **Data Management**: React Query (TanStack Query), Lemma SDK
 - **Icons & UI**: Lucide React, Shadcn/UI (Base UI, Vaul, Cmdk)
 
----
+
 ## 🏁 Getting Started
 
 ### Prerequisites
 
-- **Node.js**: `v22.0.0` or higher.
-- **Package Manager**: `pnpm` (v11.5.0 recommended).
-- **Lemma CLI**: Installed and authenticated.
+**Lemma CLI**: Installed and authenticated.
   ```bash
   npm install -g @lemma-work/cli   # Or download the official binary
   lemma auth login
@@ -118,4 +111,3 @@ pnpm deploy:lemma
 This runs `scripts/check-lemma-env.mjs`, builds the static assets in `out/`, and runs `lemma apps deploy`.
 
 ---
-##
