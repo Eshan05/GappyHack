@@ -233,8 +233,15 @@ function AuthGate({ children }: { children: ReactNode }) {
     return <AuthConfigError message={configError} />
   }
 
-  // Bypass AuthGate for the landing page
-  if (pathname === "/") {
+  // Bypass AuthGate for the landing page unless we have a pending return-to redirect.
+  let hasPendingReturnTo = false
+  try {
+    hasPendingReturnTo = !!localStorage.getItem(AUTH_RETURN_TO_KEY)
+  } catch {
+    hasPendingReturnTo = false
+  }
+
+  if (pathname === "/" && !hasPendingReturnTo) {
     return <>{children}</>
   }
 
